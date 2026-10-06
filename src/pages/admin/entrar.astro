@@ -11,8 +11,9 @@ const ok = Astro.url.searchParams.get('ok');
     <!-- a própria cena do site (pôster renderizado): leve, sem 3D -->
     <div class="entrar-cena" aria-hidden="true">
       <picture>
-        <source media="(min-width: 900px)" srcset={u('/img/og-padrao.jpg')} />
-        <img src={u('/img/poster-vertical.jpg')} alt="" fetchpriority="high" />
+        <!-- render da cena em 2450 px (desktop) e 1200 px (celular) -->
+        <source media="(min-width: 900px)" srcset={u('/img/login-cena.webp')} />
+        <img src={u('/img/login-cena-m.webp')} alt="" width="1200" height="1200" fetchpriority="high" decoding="async" />
       </picture>
       <img class="entrar-logo" src={u('/img/logo-amenezes.png')} alt="" width="150" height="59" />
       <p class="entrar-frase">Desde 1957 em Marataízes.<br /><span>{anos()} anos abrindo portas.</span></p>

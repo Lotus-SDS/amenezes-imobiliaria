@@ -139,9 +139,9 @@ h2 { font-family: var(--display); font-weight: 420; font-size: 1.25rem; margin: 
 /* Login: cena do site de um lado, formulário do outro (no celular, cena vira faixa no topo) */
 .entrar { min-height: 100dvh; display: grid; grid-template-rows: minmax(240px, 38dvh) 1fr; background: var(--fundo); }
 .entrar-cena { position: relative; overflow: hidden; background: #C98F5A; color: #fff; }
-.entrar-cena picture img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 16%; }
+.entrar-cena picture img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 38%; }
 .entrar-cena::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(18, 20, 58, .35), transparent 35%, transparent 55%, rgba(18, 20, 58, .7)); }
-.entrar-logo { position: absolute; z-index: 1; left: clamp(18px, 4vw, 48px); top: clamp(16px, 3.5vw, 40px); width: clamp(110px, 12vw, 150px); height: auto; filter: drop-shadow(0 2px 10px rgba(18, 20, 58, .45)); }
+.entrar-logo { position: absolute; z-index: 1; left: clamp(18px, 4vw, 48px); top: clamp(16px, 3.5vw, 40px); width: clamp(100px, 10vw, 118px); height: auto; /* PNG de 237 px: nítido até 118 px em tela retina */ filter: drop-shadow(0 2px 10px rgba(18, 20, 58, .45)); }
 .entrar-frase { position: absolute; z-index: 1; left: clamp(18px, 4vw, 48px); right: 18px; bottom: clamp(36px, 4vw, 48px); margin: 0; font: 400 clamp(1.2rem, 2.6vw, 2.4rem)/1.15 var(--display); letter-spacing: -.01em; text-shadow: 0 2px 18px rgba(18, 20, 58, .35); }
 .entrar-frase span { color: var(--amarelo); font-style: italic; }
 .entrar-form { position: relative; z-index: 1; display: grid; align-content: start; gap: 16px; width: 100%; max-width: 480px; margin: -24px auto 0; padding: 30px clamp(20px, 5vw, 32px) 36px; background: var(--fundo); border-radius: 24px 24px 0 0; animation: subir .6s cubic-bezier(.2, .7, .2, 1) both; }
@@ -159,7 +159,7 @@ h2 { font-family: var(--display); font-weight: 420; font-size: 1.25rem; margin: 
 @media (prefers-reduced-motion: reduce) { .entrar-form { animation: none; } }
 @media (min-width: 900px) {
   .entrar { grid-template-rows: none; grid-template-columns: minmax(0, 1.25fr) minmax(420px, 1fr); }
-  .entrar-cena picture img { object-position: 70% 50%; }
+  .entrar-cena picture img { object-position: 60% 42%; }
   .entrar-cena::after { background: linear-gradient(180deg, rgba(18, 20, 58, .4), transparent 30%, transparent 55%, rgba(18, 20, 58, .75)); }
   .entrar-form { align-content: center; margin: 0 auto; padding: 48px clamp(28px, 4vw, 64px); border-radius: 0; }
 }
