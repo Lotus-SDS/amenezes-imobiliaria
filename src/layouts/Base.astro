@@ -63,6 +63,8 @@ const cssVars = `:root{--amarelo:${brand.cores.amarelo};--azul:${brand.cores.azu
   <title>{tituloCompleto}</title>
   <meta name="description" content={descricao} />
   <link rel="canonical" href={canonical} />
+  {/* prévia da Lotus (publicada sob um prefixo) fica fora do Google; no domínio do cliente o site indexa normalmente */}
+  {import.meta.env.BASE_URL !== '/' && <meta name="robots" content="noindex, nofollow" />}
   <meta name="theme-color" content={brand.cores.noite} />
   <link rel="icon" href={u('/favicon.svg')} type="image/svg+xml" />
   <!-- fotos dos imóveis vêm do WordPress -->
