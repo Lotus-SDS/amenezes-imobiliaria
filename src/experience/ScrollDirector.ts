@@ -2,7 +2,7 @@
 // s = soma das transições de cada seção [data-cena]; tudo é reversível por construção.
 // A abertura (4 atos) é guiada pelo tempo; rolar durante ela acelera até o fim.
 import gsap from 'gsap';
-import { CENAS, abertura, formasAbertura, type Estado } from './cenas';
+import { CENAS, abertura, formasAbertura, type Estado, type Moldura } from './cenas';
 import type { Engine } from './Engine';
 
 type Secao = { nome: string; el: HTMLElement; top: number };
@@ -12,6 +12,7 @@ export class ScrollDirector {
   intro = { t: 1 };
   sMax = 0;
   override: number | null = null; // ?debug: scrubber manual
+  moldura: Moldura | null = null; // páginas internas: onde o sol cabe na faixa
   private tweenIntro: gsap.core.Tween | null = null;
   private io: IntersectionObserver | null = null;
 
@@ -55,6 +56,32 @@ export class ScrollDirector {
     const y = scrollY;
     for (const s of this.secoes) s.top = s.el.getBoundingClientRect().top + y;
     this.sMax = Math.max(0, this.secoes.length - 1);
+    this.moldura = this.medirMoldura();
+  }
+
+  // Espaço livre da faixa com a página no topo (o canvas é fixo: o sol fica parado e a faixa sobe por cima ao rolar)
+  private medirMoldura(): Moldura | null {
+    const faixa = document.querySelector<HTMLElement>('[data-cena-faixa]');
+    const wrap = faixa?.querySelector<HTMLElement>('.wrap');
+    if (!faixa || !wrap) return null;
+    const W = innerWidth, H = innerHeight, y0 = scrollY;
+    const topo = document.querySelector('.topo')?.getBoundingClientRect().height ?? 70;
+    const fundo = Math.min(H, faixa.getBoundingClientRect().bottom + y0);
+    let x: number, cy: number, r: number;
+    if (W >= 900 || W / H >= 1.15) {
+      // ao lado do texto (o título ocupa até ~16ch à esquerda)
+      const wr = wrap.getBoundingClientRect();
+      x = wr.left + wr.width * 0.78;
+      cy = (topo + fundo) / 2;
+      r = Math.min((fundo - topo) * 0.27, W * 0.11);
+    } else {
+      // celular em pé: entre o cabeçalho e o começo do texto
+      const texto = Math.min(fundo, (wrap.firstElementChild?.getBoundingClientRect().top ?? fundo) + y0);
+      x = W / 2;
+      cy = (topo + texto) / 2;
+      r = Math.min((texto - topo) * 0.34, W * 0.28);
+    }
+    return { x: (2 * x) / W - 1, y: 1 - (2 * cy) / H, r: Math.max(r, 24) / (H / 2) };
   }
 
   progresso() {
@@ -86,7 +113,7 @@ export class ScrollDirector {
       const [a, b, m] = formasAbertura(this.intro.t);
       formas = k > 0 ? [b, B.forma, k] : [a, b, m];
     } else formas = [A.forma, B.forma, k];
-    return { estado, formas };
+    return { estado, formas, moldura: this.moldura };
   }
 }
 

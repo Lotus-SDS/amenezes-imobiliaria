@@ -13,7 +13,7 @@ import { Simulation } from './Simulation';
 import { Particles } from './Particles';
 import { PostFX } from './PostFX';
 import { QualityManager, type Modo } from './QualityManager';
-import { enquadrar, type Estado } from './cenas';
+import { enquadrar, moldar, type Estado, type Moldura } from './cenas';
 import { ORLA_X0, alturaPredio, orlaZ } from './shapes/orla';
 
 const PALETA = brand.experiencia.ceu.map((c) => ({
@@ -21,7 +21,7 @@ const PALETA = brand.experiencia.ceu.map((c) => ({
 }));
 const tmp = { z: new Color(), hz: new Color(), b: new Color() };
 
-export type Fonte = { avaliar(): { estado: Estado; formas: [number, number, number] } };
+export type Fonte = { avaliar(): { estado: Estado; formas: [number, number, number]; moldura?: Moldura | null } };
 
 export class Engine {
   renderer!: WebGPURenderer;
@@ -143,7 +143,7 @@ export class Engine {
 
     const fonte = this.fonte?.avaliar();
     if (fonte) {
-      const alvo = enquadrar(fonte.estado, this.camera.aspect);
+      const alvo = moldar(enquadrar(fonte.estado, this.camera.aspect), fonte.moldura ?? null, this.camera.fov, this.camera.aspect);
       if (!this.atual) this.atual = structuredClone(alvo);
       suavizar(this.atual, alvo, 1 - Math.exp(-dt * 5.5));
       const [a, b, m] = fonte.formas;

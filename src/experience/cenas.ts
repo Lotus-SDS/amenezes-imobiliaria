@@ -81,6 +81,29 @@ export function formasAbertura(t: number): [number, number, number] {
   return [FORMA.SOL, FORMA.SOL, 1];
 }
 
+// Páginas internas: a cena só aparece na faixa do topo. O ScrollDirector mede o espaço livre da faixa
+// (à direita do texto ou, no celular, entre o cabeçalho e o texto) e o sol é posto ali.
+export type Moldura = { x: number; y: number; r: number }; // centro em NDC (-1..1) · raio em frações da meia-altura
+
+export function moldar(est: Estado, m: Moldura | null, fov: number, aspect: number): Estado {
+  if (!m || est.forma === FORMA.ORLA) return est; // a orla fica em coordenadas de mundo
+  const [cx, cy, cz] = est.cam;
+  let fx = est.alvo[0] - cx, fy = est.alvo[1] - cy, fz = est.alvo[2] - cz;
+  const fl = Math.hypot(fx, fy, fz); fx /= fl; fy /= fl; fz /= fl;
+  // direita = frente × (0,1,0); cima = direita × frente (mesma base do camera.lookAt)
+  const rl = Math.hypot(fz, fx), rx = -fz / rl, rz = fx / rl;
+  const ux = -rz * fy, uy = rz * fx - rx * fz, uz = rx * fy;
+  // mantém a profundidade original do sol; só muda onde ele cai na tela e o tamanho
+  const d = (est.sol[0] - cx) * fx + (est.sol[1] - cy) * fy + (est.sol[2] - cz) * fz;
+  const t = Math.tan((fov * Math.PI) / 360) * d;
+  const sx = m.x * t * aspect, sy = m.y * t;
+  return {
+    ...est,
+    sol: [cx + fx * d + rx * sx + ux * sy, cy + fy * d + uy * sy, cz + fz * d + rz * sx + uz * sy],
+    escala: m.r * t,
+  };
+}
+
 // Ajuste de enquadramento por proporção de tela (celular em pé: sol em cima, centralizado)
 export function enquadrar(est: Estado, aspect: number): Estado {
   if (aspect >= 1.15) return est;
