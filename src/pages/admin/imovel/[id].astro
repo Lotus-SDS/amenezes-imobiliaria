@@ -56,7 +56,7 @@ const inicial = { id: i?.id ?? null, fotos: i?.fotos ?? [], descricaoOriginal: d
           <div class="campo campo--largo"><label for="endereco">Endereço</label><input id="endereco" name="endereco" value={v('endereco')} maxlength="200" /></div>
           <div class="campo"><label for="bairro">Bairro</label><input id="bairro" name="bairro" value={v('bairro')} list="l-bairros" /><datalist id="l-bairros">{sug.bairros.map((b) => <option value={b} />)}</datalist></div>
           <div class="campo"><label for="cidade">Cidade</label><input id="cidade" name="cidade" value={v('cidade') || 'Marataízes'} /></div>
-          <div class="campo"><label for="lat">Latitude</label><input id="lat" name="lat" value={i?.geo?.lat ?? ''} inputmode="decimal" placeholder="-21.0181" /></div>
+          <div class="campo"><label for="lat">Latitude</label><input id="lat" name="lat" value={i?.geo?.lat ?? ''} inputmode="decimal" placeholder="-21.0181" /><small>Pode colar "lat, long" inteiro aqui.</small></div>
           <div class="campo"><label for="lng">Longitude</label><input id="lng" name="lng" value={i?.geo?.lng ?? ''} inputmode="decimal" placeholder="-40.8134" /><small>No Google Maps: clique com o botão direito no local e copie os números.</small></div>
         </div>
       </section>
@@ -70,8 +70,8 @@ const inicial = { id: i?.id ?? null, fotos: i?.fotos ?? [], descricaoOriginal: d
           <div class="campo"><label for="garagem">Vagas</label><input id="garagem" name="garagem" type="number" min="0" value={v('garagem')} /></div>
           <div class="campo"><label for="area">Área (m²)</label><input id="area" name="area" type="number" min="0" step="0.01" value={v('area')} /></div>
           <div class="campo so-temporada"><label for="pessoas">Capacidade (pessoas)</label><input id="pessoas" name="pessoas" type="number" min="0" value={v('pessoas')} /></div>
-          <div class="campo so-venda"><label for="preco">Preço de venda (R$)</label><input id="preco" name="preco" type="number" min="0" step="0.01" value={v('preco')} /></div>
-          <div class="campo so-anual"><label for="aluguel">Aluguel mensal (R$)</label><input id="aluguel" name="aluguel" type="number" min="0" step="0.01" value={v('aluguel')} /></div>
+          <div class="campo so-venda"><label for="preco">Preço de venda (R$)</label><input id="preco" name="preco" type="number" min="0" step="0.01" value={v('preco')} data-moeda /><small></small></div>
+          <div class="campo so-anual"><label for="aluguel">Aluguel mensal (R$)</label><input id="aluguel" name="aluguel" type="number" min="0" step="0.01" value={v('aluguel')} data-moeda /><small></small></div>
           <div class="campo"><label for="iptu">IPTU (R$)</label><input id="iptu" name="iptu" type="number" min="0" step="0.01" value={i?.iptu ?? extra(/iptu/i)} /></div>
           <div class="campo"><label for="condominio">Condomínio (R$)</label><input id="condominio" name="condominio" type="number" min="0" step="0.01" value={extra(/condom/i)} /></div>
           <div class="campo so-temporada campo--largo"><label for="linkOriginal">Link da reserva online</label><input id="linkOriginal" name="linkOriginal" type="url" value={v('linkOriginal')} placeholder="https://…" /><small>Página onde o hóspede escolhe as datas e paga (hoje, a do site antigo).</small></div>
@@ -126,9 +126,12 @@ const inicial = { id: i?.id ?? null, fotos: i?.fotos ?? [], descricaoOriginal: d
         <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="destaque" checked={!!i?.destaque} style="width:18px;height:18px" /> Destaque na página inicial</label>
         <button class="btn btn--azul" type="submit" data-salvar>{novo ? 'Cadastrar imóvel' : 'Salvar alterações'}</button>
         <p class="alterado" data-alterado hidden>Há alterações não salvas.</p>
+        {!novo && <button class="btn btn--linha" type="button" data-duplicar title="Cria uma cópia em rascunho, com as mesmas fotos">Duplicar</button>}
         {!novo && <button class="btn btn--perigo" type="button" data-excluir>Excluir imóvel</button>}
+        <small class="atalho">Atalho: Ctrl + S salva.</small>
       </div>
     </aside>
+    <div class="barra-salvar"><span data-alterado-barra hidden>Alterações não salvas</span><button class="btn btn--azul" type="submit">{novo ? 'Cadastrar' : 'Salvar'}</button></div>
   </form>
   <script is:inline type="application/json" id="dados-iniciais" set:html={JSON.stringify(inicial)} />
 </Admin>
@@ -149,8 +152,30 @@ const inicial = { id: i?.id ?? null, fotos: i?.fotos ?? [], descricaoOriginal: d
     clearTimeout((avisar as any).t);
     (avisar as any).t = setTimeout(() => (aviso.hidden = true), 3500);
   };
-  const marcar = () => { alterado = true; document.querySelector<HTMLElement>('[data-alterado]')!.hidden = false; };
+  const sinalizar = (on: boolean) => { alterado = on; document.querySelectorAll<HTMLElement>('[data-alterado],[data-alterado-barra]').forEach((e) => (e.hidden = !on)); };
+  const marcar = () => sinalizar(true);
   form.addEventListener('input', marcar);
+
+  // Prévia "R$ 350.000,00" embaixo dos valores (evita zero a mais ou a menos)
+  const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  const moeda = (c: HTMLInputElement) => { c.nextElementSibling!.textContent = c.value ? brl.format(Number(c.value)) : ''; };
+  form.querySelectorAll<HTMLInputElement>('[data-moeda]').forEach((c) => { moeda(c); c.addEventListener('input', () => moeda(c)); });
+
+  // Colar "-21.0181, -40.8134" (cópia do Google Maps) na latitude preenche os dois campos
+  const lat = form.elements.namedItem('lat') as HTMLInputElement;
+  lat.addEventListener('paste', (e) => {
+    const m = e.clipboardData?.getData('text').match(/(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)/);
+    if (!m) return;
+    e.preventDefault();
+    lat.value = m[1];
+    (form.elements.namedItem('lng') as HTMLInputElement).value = m[2];
+    marcar();
+  });
+
+  // Ctrl/Cmd + S salva
+  addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); form.requestSubmit(); }
+  });
   addEventListener('beforeunload', (e) => { if (alterado) e.preventDefault(); });
 
   // Campos que dependem da finalidade
@@ -186,6 +211,7 @@ const inicial = { id: i?.id ?? null, fotos: i?.fotos ?? [], descricaoOriginal: d
       el.draggable = !f.enviando;
       el.innerHTML = `<img alt="" loading="lazy">${k === 0 ? '<span class="capa">Capa</span>' : ''}
         <div class="acoes">${k > 0 ? '<button type="button" data-capa title="Usar como capa">★</button>' : ''}<button type="button" data-remover title="Remover foto">✕</button></div>
+        <div class="mover">${k > 0 ? '<button type="button" data-mover="-1" title="Mover para trás">←</button>' : ''}${k < fotos.length - 1 ? '<button type="button" data-mover="1" title="Mover para frente">→</button>' : ''}</div>
         ${f.enviando ? '<div class="enviando">Enviando…</div>' : ''}`;
       (el.querySelector('img') as HTMLImageElement).src = f.src;
       el.addEventListener('dragstart', () => { arrastada = k; el.classList.add('arrastando'); });
@@ -201,6 +227,11 @@ const inicial = { id: i?.id ?? null, fotos: i?.fotos ?? [], descricaoOriginal: d
         marcar(); desenhar();
       });
       el.querySelector('[data-remover]')!.addEventListener('click', () => { fotos.splice(k, 1); marcar(); desenhar(); });
+      el.querySelectorAll<HTMLButtonElement>('[data-mover]').forEach((b) => b.addEventListener('click', () => {
+        const j = k + Number(b.dataset.mover);
+        [fotos[k], fotos[j]] = [fotos[j], fotos[k]];
+        marcar(); desenhar();
+      }));
       el.querySelector('[data-capa]')?.addEventListener('click', () => { fotos.unshift(...fotos.splice(k, 1)); marcar(); desenhar(); });
       grade.append(el);
     });
@@ -248,10 +279,7 @@ const inicial = { id: i?.id ?? null, fotos: i?.fotos ?? [], descricaoOriginal: d
   soltar.addEventListener('drop', (e) => { e.preventDefault(); soltar.classList.remove('sobre'); adicionar(e.dataTransfer!.files); });
 
   // ── Salvar / excluir ──────────────────────────────────
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!form.reportValidity()) return;
-    if (fotos.some((f) => f.enviando)) return avisar('Espere as fotos terminarem de enviar.', true);
+  function coletar() {
     const fd = new FormData(form);
     const dados: Record<string, unknown> = Object.fromEntries([...fd.entries()].filter(([k]) => k !== 'caracteristicas'));
     dados.caracteristicas = fd.getAll('caracteristicas');
@@ -260,27 +288,46 @@ const inicial = { id: i?.id ?? null, fotos: i?.fotos ?? [], descricaoOriginal: d
     dados.fotos = fotos.map(({ src, full, alt }) => ({ src, full, alt }));
     // o HTML importado (com tabelas) só é trocado se o texto da descrição foi editado
     if (dados.descricaoTexto === ini.descricaoOriginal) delete dados.descricaoTexto;
+    return dados;
+  }
 
-    const btn = form.querySelector<HTMLButtonElement>('[data-salvar]')!;
-    btn.disabled = true;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    if (fotos.some((f) => f.enviando)) return avisar('Espere as fotos terminarem de enviar.', true);
+    const dados = coletar();
+    const botoes = form.querySelectorAll<HTMLButtonElement>('button[type="submit"]');
+    botoes.forEach((b) => (b.disabled = true));
     try {
       const r = await fetch(ini.id ? `${BASE}/api/admin/imoveis/${ini.id}/` : `${BASE}/api/admin/imoveis/`, {
         method: ini.id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.erro || `Erro ${r.status}`);
-      alterado = false;
+      sinalizar(false);
       if (!ini.id) { location.href = `${BASE}/admin/imovel/${j.id}/?criado=1`; return; }
-      document.querySelector<HTMLElement>('[data-alterado]')!.hidden = true;
       avisar('Salvo! O site já mostra a versão nova.');
     } catch (e: any) {
       avisar(`Não foi possível salvar: ${e.message}`, true);
     } finally {
-      btn.disabled = false;
+      botoes.forEach((b) => (b.disabled = false));
     }
   });
 
-  if (new URLSearchParams(location.search).has('criado')) avisar('Imóvel cadastrado!');
+  const q = new URLSearchParams(location.search);
+  if (q.has('criado')) avisar('Imóvel cadastrado!');
+  if (q.has('copia')) avisar('Cópia criada como rascunho. Ajuste e publique.');
+
+  // Duplicar: nova ficha em rascunho com o que está na tela (inclusive o que ainda não foi salvo)
+  document.querySelector('[data-duplicar]')?.addEventListener('click', async () => {
+    if (fotos.some((f) => f.enviando)) return avisar('Espere as fotos terminarem de enviar.', true);
+    const dados = { ...coletar(), copiarDe: ini.id, status: 'rascunho', destaque: false, titulo: `${(form.elements.namedItem('titulo') as HTMLInputElement).value} (cópia)` };
+    const r = await fetch(`${BASE}/api/admin/imoveis/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) return avisar('Não foi possível duplicar.', true);
+    sinalizar(false);
+    location.href = `${BASE}/admin/imovel/${j.id}/?copia=1`;
+  });
 
   document.querySelector('[data-excluir]')?.addEventListener('click', async () => {
     if (!confirm('Excluir este imóvel de vez? As fotos enviadas pelo painel também serão apagadas.\n\nDica: para tirar do site sem apagar, use a situação "Arquivado".')) return;

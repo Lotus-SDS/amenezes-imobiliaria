@@ -26,7 +26,7 @@ const pendentes = usuario ? naoLidos() : 0;
       <a class="adm-marca" href={u('/admin/')}><img src={u('/img/logo-amenezes.png')} alt="" width="96" height="38" /> <span>Painel</span></a>
       <nav aria-label="Painel">
         <a href={u('/admin/')} aria-current={ativo === 'imoveis' ? 'page' : undefined}>Imóveis</a>
-        <a href={u('/admin/leads/')} aria-current={ativo === 'leads' ? 'page' : undefined}>Contatos {pendentes > 0 && <b class="adm-badge">{pendentes}</b>}</a>
+        <a href={u('/admin/leads/')} aria-current={ativo === 'leads' ? 'page' : undefined}>Contatos <b class="adm-badge" hidden={pendentes === 0}>{pendentes}</b></a>
         <a href={u('/admin/conta/')} aria-current={ativo === 'conta' ? 'page' : undefined}>Conta</a>
         <a href={u('/')} target="_blank" rel="noopener">Ver site ↗</a>
       </nav>

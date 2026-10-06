@@ -6,6 +6,7 @@
   --raio: 14px;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--fundo); color: var(--tinta); font: 15px/1.5 var(--fonte); -webkit-font-smoothing: antialiased; }
 a { color: var(--azul); }
 :focus-visible { outline: 3px solid var(--azul); outline-offset: 2px; border-radius: 6px; }
@@ -21,6 +22,14 @@ h2 { font-family: var(--display); font-weight: 420; font-size: 1.25rem; margin: 
 .adm-badge { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--amarelo); color: var(--tinta); font-size: .75rem; }
 .adm-link { background: none; border: 0; color: rgba(255, 255, 255, .78); cursor: pointer; font: inherit; padding: 8px; }
 .adm-link:hover { color: #fff; }
+/* celular: marca e "Sair" em cima, menu inteiro embaixo (antes cortava "Contatos" e "Conta") */
+@media (max-width: 700px) {
+  .adm-topo { flex-wrap: wrap; gap: 6px 10px; padding: 8px 12px; }
+  .adm-marca span { display: none; }
+  .adm-topo form { margin-left: auto; }
+  .adm-topo nav { order: 3; flex-basis: 100%; margin: 0 -6px; }
+  .adm-topo nav a { padding: 7px 10px; }
+}
 .adm-main { width: min(100% - 28px, 1200px); margin: 26px auto 80px; }
 
 .adm-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
@@ -47,21 +56,28 @@ h2 { font-family: var(--display); font-weight: 420; font-size: 1.25rem; margin: 
 .tabela th, .tabela td { padding: 10px 12px; border-bottom: 1px solid var(--linha); text-align: left; vertical-align: middle; }
 .tabela th { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--suave); background: #FBFAF6; font-weight: 600; }
 .tabela tr:hover td { background: #FCFBF7; }
-.tabela tr[hidden] { display: none; }
 .tabela img { width: 64px; height: 48px; object-fit: cover; border-radius: 8px; background: #eee; display: block; }
 .t-titulo a { font-weight: 600; text-decoration: none; color: var(--tinta); }
 .t-titulo a:hover { color: var(--azul); }
 .t-titulo small { display: block; color: var(--suave); }
-.etq { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .76rem; font-weight: 600; background: #EEF0FA; color: var(--azul); white-space: nowrap; }
+.etq { text-transform: capitalize; display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .76rem; font-weight: 600; background: #EEF0FA; color: var(--azul); white-space: nowrap; }
 .etq--publicado { background: #E7F5EC; color: var(--ok); }
 .etq--rascunho { background: #FFF6CC; color: #7A5B00; }
 .etq--arquivado { background: #EEE; color: #555; }
 .etq--destaque { background: var(--amarelo); color: var(--tinta); }
+.contadores button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.contadores button:hover { color: var(--azul); }
 @media (max-width: 800px) {
   .tabela thead { display: none; }
-  .tabela tr { display: grid; grid-template-columns: 64px 1fr; gap: 4px 12px; padding: 12px; border-bottom: 1px solid var(--linha); }
-  .tabela td { border: 0; padding: 0; }
-  .tabela td:first-child { grid-row: span 4; }
+  /* card compacto: foto | título; finalidade + preço; status + data numa linha */
+  .tabela tr { display: grid; grid-template-columns: 64px 1fr auto; gap: 2px 12px; padding: 12px; border-bottom: 1px solid var(--linha); align-items: center; }
+  .tabela td { border: 0; padding: 0; font-size: .9rem; }
+  .tabela td:first-child { grid-row: span 3; align-self: start; }
+  .tabela .t-titulo { grid-column: 2 / -1; }
+  .tabela .t-fin { color: var(--suave); }
+  .tabela .t-preco { font-weight: 600; text-align: right; }
+  .tabela .t-status { grid-column: 2; }
+  .tabela .t-data { color: var(--suave); font-size: .8rem; text-align: right; }
 }
 
 /* Formulário do imóvel */
@@ -97,6 +113,10 @@ h2 { font-family: var(--display); font-weight: 420; font-size: 1.25rem; margin: 
 .foto .acoes { position: absolute; right: 6px; top: 6px; display: flex; gap: 4px; }
 .foto button { width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(18, 20, 58, .78); color: #fff; cursor: pointer; font-size: 14px; line-height: 1; }
 .foto button:hover { background: var(--tinta); }
+.foto .mover { position: absolute; left: 6px; right: 6px; bottom: 6px; display: flex; justify-content: space-between; }
+.foto .mover [data-mover="1"] { margin-left: auto; }
+@media (hover: hover) { .foto .mover { opacity: 0; transition: opacity .15s; } .foto:hover .mover, .foto:focus-within .mover { opacity: 1; } }
+@media (pointer: coarse) { .foto button { width: 36px; height: 36px; } }
 .foto .enviando { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(255, 255, 255, .7); font-size: .85rem; font-weight: 600; }
 .soltar { display: grid; place-items: center; gap: 6px; padding: 22px; border: 2px dashed rgba(18, 20, 58, .22); border-radius: 12px; text-align: center; color: var(--suave); cursor: pointer; margin-top: 12px; }
 .soltar.sobre { border-color: var(--azul); background: #EEF0FA; color: var(--azul); }
@@ -104,6 +124,16 @@ h2 { font-family: var(--display); font-weight: 420; font-size: 1.25rem; margin: 
 .lateral .cartao { display: grid; gap: 12px; }
 .lateral .btn { width: 100%; }
 .alterado { font-size: .82rem; color: #7A5B00; }
+.atalho { color: var(--suave); font-size: .78rem; text-align: center; }
+/* celular/tablet: botão de salvar sempre à mão (a lateral fica no fim da página) */
+.barra-salvar { display: none; }
+@media (max-width: 999px) {
+  .barra-salvar { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: rgba(255, 255, 255, .94); backdrop-filter: blur(8px); box-shadow: 0 -1px 0 var(--linha); }
+  .barra-salvar span { margin-right: auto; font-size: .85rem; color: #7A5B00; font-weight: 600; }
+  .barra-salvar .btn { min-width: 140px; }
+  .adm-main:has(.barra-salvar) { margin-bottom: 100px; }
+  .atalho { display: none; }
+}
 
 /* Login */
 .entrar { min-height: 100vh; display: grid; place-items: center; padding: 20px; background: radial-gradient(80% 60% at 70% 20%, rgba(255, 222, 0, .18), transparent 60%), var(--tinta); }

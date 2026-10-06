@@ -1,29 +1,41 @@
 ---
 // Contatos que chegaram pelos formulários do site
 import Admin from '../../layouts/Admin.astro';
-import { u } from '../../lib/url';
 import { listarLeads } from '../../server/leads';
 
 const leads = listarLeads();
 const TIPOS: Record<string, string> = { contato: 'Contato', visita: 'Agendar visita', captacao: 'Cadastro de imóvel', newsletter: 'Newsletter' };
 const ROTULOS: Record<string, string> = { nome: 'Nome', proprietario: 'Proprietário', telefone: 'Telefone', celular: 'Celular', email: 'E-mail', interesse: 'Interesse', imovel: 'Imóvel', dia: 'Dia', periodo: 'Período', mensagem: 'Mensagem', finalidade: 'Finalidade', tipo: 'Tipo', condominio: 'Condomínio', financiamento: 'Aceita financiamento', endereco: 'Endereço', area_total: 'Área total', area_util: 'Área útil', dormitorios: 'Dormitórios', suites: 'Suítes', vagas_cobertas: 'Vagas cobertas', vagas_descobertas: 'Vagas descobertas', outras: 'Outras características', pagina: 'Página' };
-const fone = (d: Record<string, string>) => (d.telefone || d.celular || '').replace(/\D/g, '');
+const fone = (d: Record<string, string>) => (d.telefone || d.celular || '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
+// "2026-10-10" → "10/10/2026"
+const valor = (v: string) => (/^\d{4}-\d{2}-\d{2}$/.test(v) ? v.split('-').reverse().join('/') : v);
+const whats = (d: Record<string, string>) => {
+  const ola = d.nome || d.proprietario ? `Olá, ${(d.nome || d.proprietario).split(' ')[0]}!` : 'Olá!';
+  const sobre = d.imovel ? ` sobre o imóvel ${d.imovel}` : '';
+  return `https://wa.me/55${fone(d)}?text=${encodeURIComponent(`${ola} Aqui é da A. Menezes Imobiliária. Recebemos seu contato pelo site${sobre}.`)}`;
+};
 ---
 <Admin titulo="Contatos" ativo="leads">
   <div class="adm-cab">
     <div><h1>Contatos do site</h1><p>{leads.length ? `${leads.length} recebidos` : 'Nenhum contato ainda. Os formulários do site chegam aqui.'}</p></div>
+    {leads.length > 0 && (
+      <div class="opcoes" role="radiogroup" aria-label="Mostrar" data-mostrar>
+        <label><input type="radio" name="mostrar" value="todos" checked /> Todos</label>
+        <label><input type="radio" name="mostrar" value="nao-lidos" /> Não lidos</label>
+      </div>
+    )}
   </div>
   {leads.map((l) => (
     <article class:list={['cartao', 'lead', { lido: l.lido }]} data-id={l.id}>
       <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <strong>{TIPOS[l.tipo] ?? l.tipo}</strong>
-        <time style="color:var(--suave)">{new Date(l.criado.replace(' ', 'T') + 'Z').toLocaleString('pt-BR')}</time>
+        <time style="color:var(--suave)">{new Date(l.criado.replace(' ', 'T') + 'Z').toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</time>
       </div>
-      <dl>{Object.entries(l.dados).map(([k, v]) => <><dt>{ROTULOS[k] ?? k}</dt><dd>{v}</dd></>)}</dl>
+      <dl>{Object.entries(l.dados).map(([k, v]) => <><dt>{ROTULOS[k] ?? k}</dt><dd>{valor(v)}</dd></>)}</dl>
       <div class="linha-acoes">
-        {fone(l.dados) && <a class="btn btn--sm" href={`https://wa.me/55${fone(l.dados).replace(/^55/, '')}`} target="_blank" rel="noopener">Responder no WhatsApp</a>}
-        {l.dados.email && <a class="btn btn--sm btn--linha" href={`mailto:${l.dados.email}`}>E-mail</a>}
-        <button class="btn btn--sm btn--linha" type="button" data-lido={l.lido ? '0' : '1'}>{l.lido ? 'Marcar como não lido' : 'Marcar como lido'}</button>
+        {fone(l.dados) && <a class="btn btn--sm" href={whats(l.dados)} target="_blank" rel="noopener" data-responder>Responder no WhatsApp</a>}
+        {l.dados.email && <a class="btn btn--sm btn--linha" href={`mailto:${l.dados.email}`} data-responder>E-mail</a>}
+        <button class="btn btn--sm btn--linha" type="button" data-lido>{l.lido ? 'Marcar como não lido' : 'Marcar como lido'}</button>
         <button class="btn btn--sm btn--perigo" type="button" data-excluir>Excluir</button>
       </div>
     </article>
@@ -32,18 +44,41 @@ const fone = (d: Record<string, string>) => (d.telefone || d.celular || '').repl
 
 <script>
   const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const badge = document.querySelector<HTMLElement>('.adm-badge');
+  const contar = (d: number) => {
+    if (!badge) return;
+    const n = Number(badge.textContent) + d;
+    badge.textContent = String(n);
+    badge.hidden = n <= 0;
+  };
+  // Marca lido/não lido sem recarregar a página (e atualiza o contador do menu)
+  async function marcar(art: HTMLElement, lido: boolean) {
+    if (art.classList.contains('lido') === lido) return;
+    const r = await fetch(`${BASE}/api/admin/leads/${art.dataset.id}/`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lido }) });
+    if (!r.ok) return;
+    art.classList.toggle('lido', lido);
+    art.querySelector('[data-lido]')!.textContent = lido ? 'Marcar como não lido' : 'Marcar como lido';
+    contar(lido ? -1 : 1);
+    filtrar();
+  }
+  const filtrar = () => {
+    const so = document.querySelector<HTMLInputElement>('[name="mostrar"]:checked')?.value === 'nao-lidos';
+    document.querySelectorAll<HTMLElement>('.lead').forEach((a) => (a.hidden = so && a.classList.contains('lido')));
+  };
+  document.querySelector('[data-mostrar]')?.addEventListener('change', filtrar);
+
   document.addEventListener('click', async (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-lido],button[data-excluir]');
-    if (!b) return;
-    const art = b.closest<HTMLElement>('[data-id]')!;
-    const url = `${BASE}/api/admin/leads/${art.dataset.id}/`;
-    if (b.dataset.excluir !== undefined) {
+    const alvo = e.target as HTMLElement;
+    const art = alvo.closest<HTMLElement>('[data-id]');
+    if (!art) return;
+    if (alvo.closest('[data-responder]')) return marcar(art, true); // respondeu = lido
+    if (alvo.closest('[data-lido]')) return marcar(art, !art.classList.contains('lido'));
+    if (alvo.closest('[data-excluir]')) {
       if (!confirm('Excluir este contato? Não dá para desfazer.')) return;
-      const r = await fetch(url, { method: 'DELETE' });
-      if (r.ok) art.remove();
-    } else {
-      const r = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lido: b.dataset.lido === '1' }) });
-      if (r.ok) location.reload();
+      const r = await fetch(`${BASE}/api/admin/leads/${art.dataset.id}/`, { method: 'DELETE' });
+      if (!r.ok) return;
+      if (!art.classList.contains('lido')) contar(-1);
+      art.remove();
     }
   });
 </script>

@@ -13,7 +13,7 @@ const data = (d: string) => new Date(d).toLocaleDateString('pt-BR');
   <div class="adm-cab">
     <div>
       <h1>Imóveis</h1>
-      <p>{conta('publicado')} publicados · {conta('rascunho')} rascunhos · {conta('arquivado')} arquivados</p>
+      <p class="contadores" style="margin:4px 0 0">{(['publicado', 'rascunho', 'arquivado'] as const).map((s, k) => <>{k > 0 && ' · '}<button type="button" data-status={s}>{conta(s)} {conta(s) === 1 ? s : `${s}s`}</button></>)}</p>
     </div>
     <a class="btn" href={u('/admin/imovel/novo/')}>+ Novo imóvel</a>
   </div>
@@ -35,10 +35,10 @@ const data = (d: string) => new Date(d).toLocaleDateString('pt-BR');
             <a href={u(`/admin/imovel/${i.id}/`)}>{tituloBonito(i)}</a>
             <small>{[i.codigo && `Cód. ${i.codigo}`, i.tipo, i.bairro].filter(Boolean).join(' · ')}</small>
           </td>
-          <td>{FINALIDADES[i.finalidade as keyof typeof FINALIDADES]?.rotulo}</td>
-          <td>{precoPrincipal(i).valor}</td>
-          <td><span class={`etq etq--${i.status}`}>{i.status}</span> {i.destaque && <span class="etq etq--destaque">destaque</span>}</td>
-          <td>{data(i.modificado)}</td>
+          <td class="t-fin">{FINALIDADES[i.finalidade as keyof typeof FINALIDADES]?.rotulo}</td>
+          <td class="t-preco">{precoPrincipal(i).valor}</td>
+          <td class="t-status"><span class={`etq etq--${i.status}`}>{i.status}</span> {i.destaque && <span class="etq etq--destaque">destaque</span>}</td>
+          <td class="t-data">{data(i.modificado)}</td>
         </tr>
       ))}
     </tbody>
@@ -50,8 +50,13 @@ const data = (d: string) => new Date(d).toLocaleDateString('pt-BR');
   const linhas = [...document.querySelectorAll<HTMLTableRowElement>('tbody tr')];
   const total = document.querySelector('[data-total]')!;
   const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const campos = [...box.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input,select')];
   const aplicar = () => {
-    const v = Object.fromEntries([...box.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input,select')].map((c) => [c.name, c.value]));
+    const v = Object.fromEntries(campos.map((c) => [c.name, c.value]));
+    // filtros ficam na URL: voltar do editor mantém a busca
+    const url = new URL(location.href);
+    for (const c of campos) c.value ? url.searchParams.set(c.name, c.value) : url.searchParams.delete(c.name);
+    history.replaceState(null, '', url);
     const q = norm(v.q.trim());
     let n = 0;
     for (const l of linhas) {
@@ -62,4 +67,11 @@ const data = (d: string) => new Date(d).toLocaleDateString('pt-BR');
     total.textContent = String(n);
   };
   box.addEventListener('input', aplicar);
+  const ini = new URLSearchParams(location.search);
+  campos.forEach((c) => (c.value = ini.get(c.name) ?? ''));
+  if (ini.size) aplicar();
+  document.querySelectorAll<HTMLButtonElement>('[data-status]').forEach((b) => b.addEventListener('click', () => {
+    (box.querySelector('[name="s"]') as HTMLSelectElement).value = b.dataset.status!;
+    aplicar();
+  }));
 </script>

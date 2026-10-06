@@ -114,9 +114,9 @@ export async function excluir(id: number) {
   return true;
 }
 
-// Remove do disco as fotos enviadas pelo painel que deixaram de ser usadas
+// Remove do disco as fotos enviadas pelo painel que nenhum imóvel usa mais (cópias compartilham fotos)
 async function apagarFotosOrfas(antes: Foto[] = [], depois: Foto[] = []) {
-  const usadas = new Set(depois.flatMap((f) => [f.src, f.full]));
+  const usadas = new Set([...depois, ...todasLinhas().flatMap((i) => i.fotos ?? [])].flatMap((f: Foto) => [f.src, f.full]));
   const nossas = antes.flatMap((f) => [f.src, f.full]).filter((u) => u && u.includes('/fotos/') && !usadas.has(u));
   await Promise.all(nossas.map((u) => unlink(join(FOTOS_DIR, basename(u))).catch(() => {})));
 }
