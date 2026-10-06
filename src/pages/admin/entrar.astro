@@ -1,20 +1,58 @@
 ---
 import Admin from '../../layouts/Admin.astro';
 import { u } from '../../lib/url';
+import { anos } from '../../../brand.config';
 if (Astro.locals.usuario) return Astro.redirect(u('/admin/'));
 const erro = Astro.url.searchParams.get('erro');
 const ok = Astro.url.searchParams.get('ok');
 ---
 <Admin titulo="Entrar" semMenu>
   <div class="entrar">
-    <form class="cartao" method="post" action={u('/api/entrar/')}>
-      <img src={u('/img/logo-amenezes.png')} alt="A. Menezes Imobiliária" width="140" height="55" />
-      <h1>Painel de imóveis</h1>
+    <!-- a própria cena do site (pôster renderizado): leve, sem 3D -->
+    <div class="entrar-cena" aria-hidden="true">
+      <picture>
+        <source media="(min-width: 900px)" srcset={u('/img/og-padrao.jpg')} />
+        <img src={u('/img/poster-vertical.jpg')} alt="" fetchpriority="high" />
+      </picture>
+      <img class="entrar-logo" src={u('/img/logo-amenezes.png')} alt="" width="150" height="59" />
+      <p class="entrar-frase">Desde 1957 em Marataízes.<br /><span>{anos()} anos abrindo portas.</span></p>
+    </div>
+
+    <form class="entrar-form" method="post" action={u('/api/entrar/')}>
+      <div>
+        <p class="entrar-sobre">Painel de imóveis</p>
+        <h1>Bem-vindo de volta</h1>
+        <p class="entrar-sub">Entre para cadastrar e atualizar os imóveis do site.</p>
+      </div>
       {erro && <p class="erro" role="alert">{erro}</p>}
       {ok && <p class="sucesso" role="status">{ok}</p>}
       <div class="campo"><label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="username" required autofocus /></div>
-      <div class="campo"><label for="senha">Senha</label><input id="senha" name="senha" type="password" autocomplete="current-password" required /></div>
+      <div class="campo">
+        <label for="senha">Senha</label>
+        <div class="senha">
+          <input id="senha" name="senha" type="password" autocomplete="current-password" required />
+          <button type="button" data-ver aria-controls="senha" aria-pressed="false">Mostrar</button>
+        </div>
+      </div>
       <button class="btn btn--azul" type="submit">Entrar</button>
+      <p class="entrar-rodape">Acesso restrito à equipe A. Menezes · <a href={u('/')}>Ir para o site</a></p>
     </form>
   </div>
 </Admin>
+
+<script>
+  const ver = document.querySelector<HTMLButtonElement>('[data-ver]')!;
+  const senha = document.getElementById('senha') as HTMLInputElement;
+  ver.addEventListener('click', () => {
+    const mostrar = senha.type === 'password';
+    senha.type = mostrar ? 'text' : 'password';
+    ver.textContent = mostrar ? 'Ocultar' : 'Mostrar';
+    ver.setAttribute('aria-pressed', String(mostrar));
+    senha.focus();
+  });
+  document.querySelector('form')!.addEventListener('submit', (e) => {
+    const b = (e.currentTarget as HTMLFormElement).querySelector<HTMLButtonElement>('[type="submit"]')!;
+    b.disabled = true;
+    b.textContent = 'Entrando…';
+  });
+</script>

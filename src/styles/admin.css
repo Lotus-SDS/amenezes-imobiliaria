@@ -135,9 +135,34 @@ h2 { font-family: var(--display); font-weight: 420; font-size: 1.25rem; margin: 
   .atalho { display: none; }
 }
 
-/* Login */
-.entrar { min-height: 100vh; display: grid; place-items: center; padding: 20px; background: radial-gradient(80% 60% at 70% 20%, rgba(255, 222, 0, .18), transparent 60%), var(--tinta); }
-.entrar .cartao { width: min(400px, 100%); display: grid; gap: 14px; }
+.adm-main:has(.entrar) { width: auto; margin: 0; }
+/* Login: cena do site de um lado, formulário do outro (no celular, cena vira faixa no topo) */
+.entrar { min-height: 100dvh; display: grid; grid-template-rows: minmax(240px, 38dvh) 1fr; background: var(--fundo); }
+.entrar-cena { position: relative; overflow: hidden; background: #C98F5A; color: #fff; }
+.entrar-cena picture img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 16%; }
+.entrar-cena::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(18, 20, 58, .35), transparent 35%, transparent 55%, rgba(18, 20, 58, .7)); }
+.entrar-logo { position: absolute; z-index: 1; left: clamp(18px, 4vw, 48px); top: clamp(16px, 3.5vw, 40px); width: clamp(110px, 12vw, 150px); height: auto; filter: drop-shadow(0 2px 10px rgba(18, 20, 58, .45)); }
+.entrar-frase { position: absolute; z-index: 1; left: clamp(18px, 4vw, 48px); right: 18px; bottom: clamp(36px, 4vw, 48px); margin: 0; font: 400 clamp(1.2rem, 2.6vw, 2.4rem)/1.15 var(--display); letter-spacing: -.01em; text-shadow: 0 2px 18px rgba(18, 20, 58, .35); }
+.entrar-frase span { color: var(--amarelo); font-style: italic; }
+.entrar-form { position: relative; z-index: 1; display: grid; align-content: start; gap: 16px; width: 100%; max-width: 480px; margin: -24px auto 0; padding: 30px clamp(20px, 5vw, 32px) 36px; background: var(--fundo); border-radius: 24px 24px 0 0; animation: subir .6s cubic-bezier(.2, .7, .2, 1) both; }
+.entrar-form h1 { font-size: clamp(1.7rem, 3vw, 2.3rem); }
+.entrar-sobre { margin: 0 0 6px; font-size: .74rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--azul); }
+.entrar-sub { margin: 6px 0 0; color: var(--suave); }
+.entrar-form .campo input { min-height: 50px; padding: 12px 14px; border-radius: 12px; background: #fff; }
+.entrar-form .btn { min-height: 52px; font-size: 1rem; margin-top: 4px; }
+.senha { position: relative; }
+.senha input { padding-right: 92px !important; }
+.senha button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 8px 12px; border: 0; border-radius: 8px; background: none; color: var(--azul); font: 600 .85rem var(--fonte); cursor: pointer; }
+.senha button:hover { background: #EEF0FA; }
+.entrar-rodape { margin: 4px 0 0; text-align: center; font-size: .84rem; color: var(--suave); }
+@keyframes subir { from { opacity: 0; transform: translateY(14px); } }
+@media (prefers-reduced-motion: reduce) { .entrar-form { animation: none; } }
+@media (min-width: 900px) {
+  .entrar { grid-template-rows: none; grid-template-columns: minmax(0, 1.25fr) minmax(420px, 1fr); }
+  .entrar-cena picture img { object-position: 70% 50%; }
+  .entrar-cena::after { background: linear-gradient(180deg, rgba(18, 20, 58, .4), transparent 30%, transparent 55%, rgba(18, 20, 58, .75)); }
+  .entrar-form { align-content: center; margin: 0 auto; padding: 48px clamp(28px, 4vw, 64px); border-radius: 0; }
+}
 .erro { padding: 10px 14px; border-radius: 10px; background: #FDECEA; color: var(--perigo); font-size: .92rem; }
 .sucesso { padding: 10px 14px; border-radius: 10px; background: #E7F5EC; color: var(--ok); font-size: .92rem; }
 
