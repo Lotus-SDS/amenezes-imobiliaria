@@ -5,7 +5,8 @@ interface Props { tipo?: 'contato' | 'visita'; imovel?: string; titulo?: string 
 const { tipo = 'contato', imovel, titulo } = Astro.props;
 const id = `f-${tipo}-${Math.random().toString(36).slice(2, 7)}`;
 ---
-<form class="form" data-lead={tipo} method="post" action={u('/obrigado/')} novalidate={false}>
+<form class="form" data-lead={tipo} method="post" action={u('/api/leads/')}>
+  <input type="hidden" name="formulario" value={tipo} />
   {titulo && <h3>{titulo}</h3>}
   {imovel && <input type="hidden" name="imovel" value={imovel} />}
   <div class="duas">

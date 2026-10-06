@@ -1,0 +1,65 @@
+---
+// Lista de imóveis do painel (todos os status), com busca e filtros no navegador
+import Admin from '../../layouts/Admin.astro';
+import { u } from '../../lib/url';
+import { listarTodos } from '../../server/imoveis';
+import { FINALIDADES, precoPrincipal, tituloBonito } from '../../lib/imoveis';
+
+const lista = listarTodos();
+const conta = (s: string) => lista.filter((i) => i.status === s).length;
+const data = (d: string) => new Date(d).toLocaleDateString('pt-BR');
+---
+<Admin titulo="Imóveis" ativo="imoveis">
+  <div class="adm-cab">
+    <div>
+      <h1>Imóveis</h1>
+      <p>{conta('publicado')} publicados · {conta('rascunho')} rascunhos · {conta('arquivado')} arquivados</p>
+    </div>
+    <a class="btn" href={u('/admin/imovel/novo/')}>+ Novo imóvel</a>
+  </div>
+
+  <div class="filtros" data-filtros>
+    <input type="search" name="q" placeholder="Buscar por código, título, bairro, rua…" aria-label="Buscar" autofocus />
+    <select name="f" aria-label="Finalidade"><option value="">Todas as finalidades</option>{Object.entries(FINALIDADES).map(([k, v]) => <option value={k}>{v.rotulo}</option>)}</select>
+    <select name="s" aria-label="Status"><option value="">Todos os status</option><option value="publicado">Publicados</option><option value="rascunho">Rascunhos</option><option value="arquivado">Arquivados</option></select>
+  </div>
+  <p class="contadores"><span><b data-total>{lista.length}</b> imóveis na lista</span></p>
+
+  <table class="tabela">
+    <thead><tr><th>Foto</th><th>Imóvel</th><th>Finalidade</th><th>Preço</th><th>Status</th><th>Atualizado</th></tr></thead>
+    <tbody>
+      {lista.map((i) => (
+        <tr data-f={i.finalidade} data-s={i.status} data-txt={`${i.codigo} ${i.titulo} ${tituloBonito(i)} ${i.bairro} ${i.endereco} ${i.tipo}`.toLowerCase()}>
+          <td>{i.capa ? <img src={i.capa.src} alt="" loading="lazy" width="64" height="48" /> : <img alt="" />}</td>
+          <td class="t-titulo">
+            <a href={u(`/admin/imovel/${i.id}/`)}>{tituloBonito(i)}</a>
+            <small>{[i.codigo && `Cód. ${i.codigo}`, i.tipo, i.bairro].filter(Boolean).join(' · ')}</small>
+          </td>
+          <td>{FINALIDADES[i.finalidade as keyof typeof FINALIDADES]?.rotulo}</td>
+          <td>{precoPrincipal(i).valor}</td>
+          <td><span class={`etq etq--${i.status}`}>{i.status}</span> {i.destaque && <span class="etq etq--destaque">destaque</span>}</td>
+          <td>{data(i.modificado)}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</Admin>
+
+<script>
+  const box = document.querySelector<HTMLElement>('[data-filtros]')!;
+  const linhas = [...document.querySelectorAll<HTMLTableRowElement>('tbody tr')];
+  const total = document.querySelector('[data-total]')!;
+  const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const aplicar = () => {
+    const v = Object.fromEntries([...box.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input,select')].map((c) => [c.name, c.value]));
+    const q = norm(v.q.trim());
+    let n = 0;
+    for (const l of linhas) {
+      const ok = (!q || norm(l.dataset.txt!).includes(q)) && (!v.f || l.dataset.f === v.f) && (!v.s || l.dataset.s === v.s);
+      l.hidden = !ok;
+      if (ok) n++;
+    }
+    total.textContent = String(n);
+  };
+  box.addEventListener('input', aplicar);
+</script>

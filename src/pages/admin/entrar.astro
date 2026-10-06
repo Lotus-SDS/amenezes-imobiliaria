@@ -1,0 +1,20 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { u } from '../../lib/url';
+if (Astro.locals.usuario) return Astro.redirect(u('/admin/'));
+const erro = Astro.url.searchParams.get('erro');
+const ok = Astro.url.searchParams.get('ok');
+---
+<Admin titulo="Entrar" semMenu>
+  <div class="entrar">
+    <form class="cartao" method="post" action={u('/api/entrar/')}>
+      <img src={u('/img/logo-amenezes.png')} alt="A. Menezes Imobiliária" width="140" height="55" />
+      <h1>Painel de imóveis</h1>
+      {erro && <p class="erro" role="alert">{erro}</p>}
+      {ok && <p class="sucesso" role="status">{ok}</p>}
+      <div class="campo"><label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="username" required autofocus /></div>
+      <div class="campo"><label for="senha">Senha</label><input id="senha" name="senha" type="password" autocomplete="current-password" required /></div>
+      <button class="btn btn--azul" type="submit">Entrar</button>
+    </form>
+  </div>
+</Admin>

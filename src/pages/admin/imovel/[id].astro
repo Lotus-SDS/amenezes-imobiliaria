@@ -1,0 +1,290 @@
+---
+// Editor de imóvel (novo ou existente)
+import Admin from '../../../layouts/Admin.astro';
+import { u } from '../../../lib/url';
+import { porId, sugestoes } from '../../../server/imoveis';
+import { tituloBonito } from '../../../lib/imoveis';
+
+const novo = Astro.params.id === 'novo';
+const i: any = novo ? null : porId(Number(Astro.params.id));
+if (!novo && !i) return Astro.redirect(u('/admin/'));
+
+const sug = sugestoes();
+const v = (k: string) => (i?.[k] ?? '') as string | number;
+const extra = (rotulo: RegExp) => i?.precos?.find((p: any) => rotulo.test(p.rotulo))?.valor ?? '';
+// Descrição em texto simples para editar (o HTML importado só é substituído se o texto for alterado)
+const paraTexto = (h: string) => (h || '')
+  .replace(/<\/(p|tr|li|h\d)>/gi, '\n\n').replace(/<br\s*\/?>/gi, '\n').replace(/<\/t[dh]>/gi, ' | ')
+  .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+  .replace(/ \| \n/g, '\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+const descricao = paraTexto(i?.descricaoHtml);
+const carac = new Set<string>(i?.caracteristicas ?? []);
+const titulo = novo ? 'Novo imóvel' : tituloBonito(i);
+const inicial = { id: i?.id ?? null, fotos: i?.fotos ?? [], descricaoOriginal: descricao };
+---
+<Admin titulo={titulo} ativo="imoveis">
+  <div class="adm-cab">
+    <div>
+      <a href={u('/admin/')}>← Imóveis</a>
+      <h1>{titulo}</h1>
+      {!novo && <p>{i.codigo && `Cód. ${i.codigo} · `}atualizado em {new Date(i.modificado).toLocaleString('pt-BR')}</p>}
+    </div>
+    {!novo && i.status === 'publicado' && <a class="btn btn--linha" href={u(i.url)} target="_blank" rel="noopener">Ver no site ↗</a>}
+  </div>
+
+  <form id="editor" class="form-grade" data-fin={i?.finalidade ?? 'venda'} novalidate>
+    <div>
+      <section class="cartao">
+        <h2>Anúncio</h2>
+        <div class="campos">
+          <div class="campo campo--largo"><label for="titulo">Título do anúncio *</label><input id="titulo" name="titulo" value={v('titulo')} required maxlength="160" placeholder="Ex.: Casa de 3 quartos com piscina em Areias Negras" /></div>
+          <div class="campo"><label for="codigo">Código</label><input id="codigo" name="codigo" value={v('codigo')} maxlength="40" /></div>
+          <div class="campo"><label for="tipo">Tipo *</label><input id="tipo" name="tipo" value={v('tipo')} list="l-tipos" required /><datalist id="l-tipos">{sug.tipos.map((t) => <option value={t} />)}</datalist></div>
+          <div class="campo campo--largo"><span class="rotulo">Finalidade *</span>
+            <div class="opcoes" role="radiogroup">
+              {[['venda', 'Venda'], ['anual', 'Aluguel anual'], ['temporada', 'Temporada']].map(([k, r]) => (
+                <label><input type="radio" name="finalidade" value={k} checked={(i?.finalidade ?? 'venda') === k} /> {r}</label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="cartao">
+        <h2>Localização</h2>
+        <div class="campos">
+          <div class="campo campo--largo"><label for="endereco">Endereço</label><input id="endereco" name="endereco" value={v('endereco')} maxlength="200" /></div>
+          <div class="campo"><label for="bairro">Bairro</label><input id="bairro" name="bairro" value={v('bairro')} list="l-bairros" /><datalist id="l-bairros">{sug.bairros.map((b) => <option value={b} />)}</datalist></div>
+          <div class="campo"><label for="cidade">Cidade</label><input id="cidade" name="cidade" value={v('cidade') || 'Marataízes'} /></div>
+          <div class="campo"><label for="lat">Latitude</label><input id="lat" name="lat" value={i?.geo?.lat ?? ''} inputmode="decimal" placeholder="-21.0181" /></div>
+          <div class="campo"><label for="lng">Longitude</label><input id="lng" name="lng" value={i?.geo?.lng ?? ''} inputmode="decimal" placeholder="-40.8134" /><small>No Google Maps: clique com o botão direito no local e copie os números.</small></div>
+        </div>
+      </section>
+
+      <section class="cartao">
+        <h2>Ficha e valores</h2>
+        <div class="campos">
+          <div class="campo"><label for="quartos">Quartos</label><input id="quartos" name="quartos" type="number" min="0" value={v('quartos')} /></div>
+          <div class="campo"><label for="suites">Suítes</label><input id="suites" name="suites" type="number" min="0" value={v('suites')} /></div>
+          <div class="campo"><label for="banheiros">Banheiros</label><input id="banheiros" name="banheiros" type="number" min="0" value={v('banheiros')} /></div>
+          <div class="campo"><label for="garagem">Vagas</label><input id="garagem" name="garagem" type="number" min="0" value={v('garagem')} /></div>
+          <div class="campo"><label for="area">Área (m²)</label><input id="area" name="area" type="number" min="0" step="0.01" value={v('area')} /></div>
+          <div class="campo so-temporada"><label for="pessoas">Capacidade (pessoas)</label><input id="pessoas" name="pessoas" type="number" min="0" value={v('pessoas')} /></div>
+          <div class="campo so-venda"><label for="preco">Preço de venda (R$)</label><input id="preco" name="preco" type="number" min="0" step="0.01" value={v('preco')} /></div>
+          <div class="campo so-anual"><label for="aluguel">Aluguel mensal (R$)</label><input id="aluguel" name="aluguel" type="number" min="0" step="0.01" value={v('aluguel')} /></div>
+          <div class="campo"><label for="iptu">IPTU (R$)</label><input id="iptu" name="iptu" type="number" min="0" step="0.01" value={i?.iptu ?? extra(/iptu/i)} /></div>
+          <div class="campo"><label for="condominio">Condomínio (R$)</label><input id="condominio" name="condominio" type="number" min="0" step="0.01" value={extra(/condom/i)} /></div>
+          <div class="campo so-temporada campo--largo"><label for="linkOriginal">Link da reserva online</label><input id="linkOriginal" name="linkOriginal" type="url" value={v('linkOriginal')} placeholder="https://…" /><small>Página onde o hóspede escolhe as datas e paga (hoje, a do site antigo).</small></div>
+          <div class="campo campo--largo"><label style="display:flex;gap:8px;align-items:center;font-weight:500"><input type="checkbox" name="financiamento" checked={!!i?.financiamento || /financ/i.test(i?.descricaoHtml ?? '')} style="width:18px;height:18px;min-height:0" /> Aceita financiamento próprio (mostra o selo "Até 120x")</label></div>
+        </div>
+      </section>
+
+      <section class="cartao">
+        <h2>Descrição</h2>
+        <div class="campo">
+          <textarea name="descricaoTexto" aria-label="Descrição do imóvel" placeholder="Conte o que o imóvel tem de melhor: cômodos, acabamento, vizinhança…">{descricao}</textarea>
+          <small>Deixe uma linha em branco entre os parágrafos.</small>
+        </div>
+      </section>
+
+      <section class="cartao">
+        <h2>Características</h2>
+        <div class="carac">
+          {[...new Set([...sug.caracteristicas, ...carac])].map((c) => (
+            <label><input type="checkbox" name="caracteristicas" value={c} checked={carac.has(c)} /> {c}</label>
+          ))}
+        </div>
+        <div class="campo" style="margin-top:14px;max-width:360px"><label for="nova-carac">Adicionar outra</label><input id="nova-carac" placeholder="Ex.: Vista para o mar (Enter para adicionar)" /></div>
+      </section>
+
+      <section class="cartao">
+        <h2>Fotos</h2>
+        <p style="margin:-6px 0 12px;color:var(--suave)">A primeira foto é a capa. Arraste para mudar a ordem.</p>
+        <div class="fotos" data-fotos></div>
+        <label class="soltar" data-soltar>
+          <strong>Adicionar fotos</strong>
+          <span>Clique ou arraste as fotos aqui. Elas são reduzidas automaticamente antes de enviar.</span>
+          <input type="file" accept="image/*" multiple hidden />
+        </label>
+      </section>
+
+      <section class="cartao">
+        <h2>Vídeo</h2>
+        <div class="campo"><label for="video">Link do YouTube</label><input id="video" name="video" value={i?.video ? `https://youtu.be/${i.video}` : ''} placeholder="https://youtu.be/…" /></div>
+      </section>
+    </div>
+
+    <aside class="lateral">
+      <div class="cartao">
+        <div class="campo"><label for="status">Situação</label>
+          <select id="status" name="status">
+            <option value="publicado" selected={(i?.status ?? 'publicado') === 'publicado'}>Publicado (aparece no site)</option>
+            <option value="rascunho" selected={i?.status === 'rascunho'}>Rascunho (não aparece)</option>
+            <option value="arquivado" selected={i?.status === 'arquivado'}>Arquivado (vendido / alugado)</option>
+          </select>
+        </div>
+        <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="destaque" checked={!!i?.destaque} style="width:18px;height:18px" /> Destaque na página inicial</label>
+        <button class="btn btn--azul" type="submit" data-salvar>{novo ? 'Cadastrar imóvel' : 'Salvar alterações'}</button>
+        <p class="alterado" data-alterado hidden>Há alterações não salvas.</p>
+        {!novo && <button class="btn btn--perigo" type="button" data-excluir>Excluir imóvel</button>}
+      </div>
+    </aside>
+  </form>
+  <script is:inline type="application/json" id="dados-iniciais" set:html={JSON.stringify(inicial)} />
+</Admin>
+
+<script>
+  type Foto = { src: string; full: string; alt?: string; enviando?: boolean };
+  const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const form = document.getElementById('editor') as HTMLFormElement;
+  const ini = JSON.parse(document.getElementById('dados-iniciais')!.textContent!);
+  let fotos: Foto[] = ini.fotos;
+  let alterado = false;
+  const aviso = document.querySelector<HTMLElement>('.adm-aviso')!;
+
+  const avisar = (msg: string, ruim = false) => {
+    aviso.textContent = msg;
+    aviso.classList.toggle('ruim', ruim);
+    aviso.hidden = false;
+    clearTimeout((avisar as any).t);
+    (avisar as any).t = setTimeout(() => (aviso.hidden = true), 3500);
+  };
+  const marcar = () => { alterado = true; document.querySelector<HTMLElement>('[data-alterado]')!.hidden = false; };
+  form.addEventListener('input', marcar);
+  addEventListener('beforeunload', (e) => { if (alterado) e.preventDefault(); });
+
+  // Campos que dependem da finalidade
+  form.addEventListener('change', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.name === 'finalidade') form.dataset.fin = t.value;
+  });
+
+  // Nova característica
+  const nova = document.getElementById('nova-carac') as HTMLInputElement;
+  nova.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const val = nova.value.trim();
+    if (!val) return;
+    const lab = document.createElement('label');
+    lab.innerHTML = '<input type="checkbox" name="caracteristicas" checked> ';
+    (lab.firstChild as HTMLInputElement).value = val;
+    lab.append(val);
+    document.querySelector('.carac')!.append(lab);
+    nova.value = '';
+    marcar();
+  });
+
+  // ── Fotos ─────────────────────────────────────────────
+  const grade = document.querySelector<HTMLElement>('[data-fotos]')!;
+  let arrastada = -1;
+  function desenhar() {
+    grade.innerHTML = '';
+    fotos.forEach((f, k) => {
+      const el = document.createElement('div');
+      el.className = 'foto';
+      el.draggable = !f.enviando;
+      el.innerHTML = `<img alt="" loading="lazy">${k === 0 ? '<span class="capa">Capa</span>' : ''}
+        <div class="acoes">${k > 0 ? '<button type="button" data-capa title="Usar como capa">★</button>' : ''}<button type="button" data-remover title="Remover foto">✕</button></div>
+        ${f.enviando ? '<div class="enviando">Enviando…</div>' : ''}`;
+      (el.querySelector('img') as HTMLImageElement).src = f.src;
+      el.addEventListener('dragstart', () => { arrastada = k; el.classList.add('arrastando'); });
+      el.addEventListener('dragend', () => el.classList.remove('arrastando'));
+      el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.add('alvo'); });
+      el.addEventListener('dragleave', () => el.classList.remove('alvo'));
+      el.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (arrastada < 0 || arrastada === k) return;
+        const [m] = fotos.splice(arrastada, 1);
+        fotos.splice(k, 0, m);
+        arrastada = -1;
+        marcar(); desenhar();
+      });
+      el.querySelector('[data-remover]')!.addEventListener('click', () => { fotos.splice(k, 1); marcar(); desenhar(); });
+      el.querySelector('[data-capa]')?.addEventListener('click', () => { fotos.unshift(...fotos.splice(k, 1)); marcar(); desenhar(); });
+      grade.append(el);
+    });
+  }
+  desenhar();
+
+  // Reduz no navegador (foto de celular de 5 MB vira ~200 KB) e envia as duas versões
+  async function reduzir(arquivo: File, lado: number): Promise<Blob> {
+    const bmp = await createImageBitmap(arquivo, { imageOrientation: 'from-image' } as any);
+    const s = Math.min(1, lado / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+    c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
+    bmp.close();
+    const webp = await new Promise<Blob | null>((r) => c.toBlob(r, 'image/webp', 0.82));
+    if (webp && webp.type === 'image/webp') return webp;
+    return new Promise<Blob>((r) => c.toBlob((b) => r(b!), 'image/jpeg', 0.85));
+  }
+  async function enviar(b: Blob) {
+    const r = await fetch(`${BASE}/api/admin/fotos/`, { method: 'POST', headers: { 'Content-Type': b.type }, body: b });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.erro || 'Falha no envio');
+    return j.url as string;
+  }
+  async function adicionar(arquivos: FileList | File[]) {
+    for (const arq of [...arquivos].filter((a) => a.type.startsWith('image/'))) {
+      const temp: Foto = { src: URL.createObjectURL(arq), full: '', enviando: true };
+      fotos.push(temp); desenhar();
+      try {
+        const [full, thumb] = await Promise.all([reduzir(arq, 1600).then(enviar), reduzir(arq, 800).then(enviar)]);
+        Object.assign(temp, { src: thumb, full, enviando: false });
+        marcar();
+      } catch (e: any) {
+        fotos = fotos.filter((f) => f !== temp);
+        avisar(`Não foi possível enviar ${arq.name}: ${e.message}`, true);
+      }
+      desenhar();
+    }
+  }
+  const soltar = document.querySelector<HTMLLabelElement>('[data-soltar]')!;
+  const entrada = soltar.querySelector('input')!;
+  entrada.addEventListener('change', () => { adicionar(entrada.files!); entrada.value = ''; });
+  soltar.addEventListener('dragover', (e) => { if (e.dataTransfer?.types.includes('Files')) { e.preventDefault(); soltar.classList.add('sobre'); } });
+  soltar.addEventListener('dragleave', () => soltar.classList.remove('sobre'));
+  soltar.addEventListener('drop', (e) => { e.preventDefault(); soltar.classList.remove('sobre'); adicionar(e.dataTransfer!.files); });
+
+  // ── Salvar / excluir ──────────────────────────────────
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    if (fotos.some((f) => f.enviando)) return avisar('Espere as fotos terminarem de enviar.', true);
+    const fd = new FormData(form);
+    const dados: Record<string, unknown> = Object.fromEntries([...fd.entries()].filter(([k]) => k !== 'caracteristicas'));
+    dados.caracteristicas = fd.getAll('caracteristicas');
+    dados.financiamento = fd.has('financiamento');
+    dados.destaque = fd.has('destaque');
+    dados.fotos = fotos.map(({ src, full, alt }) => ({ src, full, alt }));
+    // o HTML importado (com tabelas) só é trocado se o texto da descrição foi editado
+    if (dados.descricaoTexto === ini.descricaoOriginal) delete dados.descricaoTexto;
+
+    const btn = form.querySelector<HTMLButtonElement>('[data-salvar]')!;
+    btn.disabled = true;
+    try {
+      const r = await fetch(ini.id ? `${BASE}/api/admin/imoveis/${ini.id}/` : `${BASE}/api/admin/imoveis/`, {
+        method: ini.id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.erro || `Erro ${r.status}`);
+      alterado = false;
+      if (!ini.id) { location.href = `${BASE}/admin/imovel/${j.id}/?criado=1`; return; }
+      document.querySelector<HTMLElement>('[data-alterado]')!.hidden = true;
+      avisar('Salvo! O site já mostra a versão nova.');
+    } catch (e: any) {
+      avisar(`Não foi possível salvar: ${e.message}`, true);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  if (new URLSearchParams(location.search).has('criado')) avisar('Imóvel cadastrado!');
+
+  document.querySelector('[data-excluir]')?.addEventListener('click', async () => {
+    if (!confirm('Excluir este imóvel de vez? As fotos enviadas pelo painel também serão apagadas.\n\nDica: para tirar do site sem apagar, use a situação "Arquivado".')) return;
+    const r = await fetch(`${BASE}/api/admin/imoveis/${ini.id}/`, { method: 'DELETE' });
+    if (r.ok) { alterado = false; location.href = `${BASE}/admin/`; } else avisar('Não foi possível excluir.', true);
+  });
+</script>

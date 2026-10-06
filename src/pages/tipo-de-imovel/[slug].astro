@@ -3,13 +3,12 @@
 import Base from '../../layouts/Base.astro';
 import Faixa from '../../components/Faixa.astro';
 import Listagem from '../../components/Listagem.astro';
-import { imoveis, taxonomias } from '../../lib/imoveis';
+import { publicados } from '../../lib/imoveis';
+import { u } from '../../lib/url';
 
-export function getStaticPaths() {
-  return taxonomias.tipos.map((t) => ({ params: { slug: t.slug }, props: { nome: t.name } }));
-}
-const { nome } = Astro.props as { nome: string };
-const lista = imoveis.filter((i) => i.tipoSlug === Astro.params.slug);
+const lista = publicados().filter((i) => i.tipoSlug === Astro.params.slug);
+if (!lista.length) return Astro.rewrite(u('/404/'));
+const nome = lista[0].tipo;
 const plural: Record<string, string> = { Casa: 'Casas', Apartamento: 'Apartamentos', Lote: 'Lotes', Loja: 'Lojas', Duplex: 'Duplex', Galpão: 'Galpões', 'Ponto comercial': 'Pontos comerciais', 'Área comercial': 'Áreas comerciais', Área: 'Áreas', Garagem: 'Garagens' };
 const titulo = `${plural[nome] || nome} em Marataízes`;
 const lead = Astro.params.slug === 'lote'

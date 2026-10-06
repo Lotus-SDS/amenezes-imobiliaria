@@ -1,0 +1,38 @@
+# Stack própria da A. Menezes no servidor da Lotus (mesmo Traefik, rede web_network e certificado).
+# No servidor:  cd /opt/amenezes && git pull && docker compose -f deploy/compose.yml up -d --build
+# Banco e fotos ficam no volume "dados": sobrevivem a cada atualização.
+name: amenezes
+
+services:
+  app:
+    build:
+      context: ..
+      args:
+        BASE_PATH: /amenezes-imobiliaria/
+    image: amenezes-imobiliaria:local
+    restart: always
+    volumes:
+      - dados:/data
+    networks: [web_network]
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.amenezes.rule: "Host(`lotusdev.com.br`) && (Path(`/amenezes-imobiliaria`) || PathPrefix(`/amenezes-imobiliaria/`))"
+      traefik.http.routers.amenezes.entrypoints: websecure
+      traefik.http.routers.amenezes.tls.certresolver: myresolver
+      # vence a rota antiga do site estático enquanto ela existir no Lotus_site
+      traefik.http.routers.amenezes.priority: "1000"
+      traefik.http.routers.amenezes.middlewares: amenezes-barra
+      traefik.http.middlewares.amenezes-barra.redirectregex.regex: "^(https?://[^/]+/amenezes-imobiliaria)(\\?.*)?$$"
+      traefik.http.middlewares.amenezes-barra.redirectregex.replacement: "$${1}/$${2}"
+      traefik.http.middlewares.amenezes-barra.redirectregex.permanent: "true"
+      traefik.http.services.amenezes.loadbalancer.server.port: "4321"
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  dados:
+
+networks:
+  web_network:
+    external: true

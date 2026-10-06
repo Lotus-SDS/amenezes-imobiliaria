@@ -8,3 +8,7 @@ BRIEFING.md
 CONCEITOS.md
 APRESENTACAO.md
 PENDENCIAS.md
+
+# Banco e fotos do painel (em produção ficam num volume Docker)
+data/
+.credenciais-teste

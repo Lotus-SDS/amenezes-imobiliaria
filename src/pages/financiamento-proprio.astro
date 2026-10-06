@@ -5,7 +5,8 @@ import Faixa from '../components/Faixa.astro';
 import Card from '../components/Card.astro';
 import Icone from '../components/Icone.astro';
 import { waLink } from '../../brand.config';
-import { imoveis, temFinanciamento } from '../lib/imoveis';
+import { publicados, temFinanciamento } from '../lib/imoveis';
+const imoveis = publicados();
 const lista = imoveis.filter((i) => temFinanciamento(i) && i.finalidade === 'venda');
 // Tabela real publicada no anúncio do Lote 754, Quadra 37 — Praia de Marobá
 const tabela: [number, string, string][] = [[12, '5.667,00', '68.004,00'], [24, '3.166,00', '75.984,00'], [36, '2.347,00', '84.492,00'], [48, '1.949,00', '93.552,00'], [60, '1.718,00', '103.080,00'], [72, '1.571,00', '113.112,00'], [84, '1.472,00', '123.648,00'], [96, '1.402,00', '134.592,00'], [108, '1.351,00', '145.908,00'], [120, '1.313,00', '157.560,00']];

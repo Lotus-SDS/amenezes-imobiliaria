@@ -5,16 +5,18 @@ import Card from '../components/Card.astro';
 import LeadForm from '../components/LeadForm.astro';
 import Icone from '../components/Icone.astro';
 import { brand, waLink, anos } from '../../brand.config';
-import { imoveis, destaques, contagem, taxonomias, temFinanciamento } from '../lib/imoveis';
+import { publicados, destaques, contagem, taxonomiasDe, temFinanciamento } from '../lib/imoveis';
 
-const nVenda = contagem('venda'), nAnual = contagem('anual'), nTemp = contagem('temporada');
+const imoveis = publicados();
+const taxonomias = taxonomiasDe(imoveis);
+const nVenda = contagem(imoveis, 'venda'), nAnual = contagem(imoveis, 'anual'), nTemp = contagem(imoveis, 'temporada');
 const nLotes = imoveis.filter((i) => i.tipoSlug === 'lote' && i.finalidade === 'venda').length;
 const nBairros = taxonomias.bairros.length;
 const nFin = imoveis.filter(temFinanciamento).length;
 const porTipo = (f: string) => Object.entries(imoveis.filter((i) => i.finalidade === f).reduce((a: Record<string, number>, i) => ((a[i.tipo] = (a[i.tipo] || 0) + 1), a), {})).sort((a, b) => b[1] - a[1]).slice(0, 5);
 const tipoUrl: Record<string, string> = Object.fromEntries(taxonomias.tipos.map((t) => [t.name, `/tipo-de-imovel/${t.slug}/`]));
 const comerciais = taxonomias.tipos.filter((t) => ['loja', 'galpao', 'ponto-comercial', 'area-comercial', 'garagem'].includes(t.slug));
-const lista = destaques(6);
+const lista = destaques(imoveis, 6);
 
 // Linha de luzes da orla em CSS (o "loader" que vira a cena)
 let s = 7;

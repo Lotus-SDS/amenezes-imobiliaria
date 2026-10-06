@@ -1,0 +1,50 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { u } from '../../lib/url';
+import { listarUsuarios } from '../../server/auth';
+const msg = Astro.url.searchParams.get('msg');
+const eu = Astro.locals.usuario!;
+const usuarios = listarUsuarios();
+---
+<Admin titulo="Conta" ativo="conta">
+  <div class="adm-cab"><div><h1>Conta e acessos</h1><p>Você entrou como <b>{eu.email}</b>.</p></div></div>
+  {msg && <p class="sucesso" role="status" style="margin-bottom:16px">{msg}</p>}
+
+  <section class="cartao">
+    <h2>Trocar minha senha</h2>
+    <form class="campos" method="post" action={u('/api/admin/conta/')}>
+      <input type="hidden" name="acao" value="senha" />
+      <div class="campo"><label for="atual">Senha atual</label><input id="atual" name="atual" type="password" autocomplete="current-password" required /></div>
+      <div class="campo"><label for="nova">Nova senha</label><input id="nova" name="nova" type="password" autocomplete="new-password" minlength="10" required /><small>Mínimo de 10 caracteres.</small></div>
+      <div class="campo" style="align-self:end"><button class="btn btn--azul" type="submit">Trocar senha</button></div>
+    </form>
+  </section>
+
+  <section class="cartao">
+    <h2>Quem tem acesso ao painel</h2>
+    <table class="tabela" style="margin-bottom:18px">
+      <thead><tr><th>Nome</th><th>E-mail</th><th></th></tr></thead>
+      <tbody>
+        {usuarios.map((x) => (
+          <tr>
+            <td>{x.nome || '—'}</td><td>{x.email}</td>
+            <td style="text-align:right">{x.id !== eu.id && (
+              <form method="post" action={u('/api/admin/conta/')} onsubmit="return confirm('Remover este acesso?')">
+                <input type="hidden" name="acao" value="remover" /><input type="hidden" name="id" value={x.id} />
+                <button class="btn btn--sm btn--perigo" type="submit">Remover</button>
+              </form>
+            )}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <h2>Dar acesso a outra pessoa</h2>
+    <form class="campos" method="post" action={u('/api/admin/conta/')}>
+      <input type="hidden" name="acao" value="adicionar" />
+      <div class="campo"><label for="n-nome">Nome</label><input id="n-nome" name="nome" /></div>
+      <div class="campo"><label for="n-email">E-mail</label><input id="n-email" name="email" type="email" required /></div>
+      <div class="campo"><label for="n-senha">Senha inicial</label><input id="n-senha" name="senha" type="password" autocomplete="new-password" minlength="10" required /><small>Peça para a pessoa trocar no primeiro acesso.</small></div>
+      <div class="campo" style="align-self:end"><button class="btn" type="submit">Criar acesso</button></div>
+    </form>
+  </section>
+</Admin>

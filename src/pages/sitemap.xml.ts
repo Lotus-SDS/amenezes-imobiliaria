@@ -1,8 +1,10 @@
 // Sitemap completo (o atual só tinha as taxonomias — os 301 imóveis ficavam de fora)
-import { imoveis, taxonomias } from '../lib/imoveis';
+import { publicados, taxonomiasDe } from '../lib/imoveis';
 import { brand } from '../../brand.config';
 
 export function GET() {
+  const imoveis = publicados();
+  const taxonomias = taxonomiasDe(imoveis);
   const fixas = ['/', '/imoveis/', '/tipo-de-negocio/venda/', '/tipo-de-negocio/alugar/', '/tipo-de-negocio/aluguel_temporada/',
     '/financiamento-proprio/', '/sobre-nos/', '/contato/', '/cadastre-seu-imovel/', '/politica-de-privacidade/'];
   const urls = [

@@ -11,7 +11,8 @@ const tipos = ['Casa', 'Apartamento', 'Chácara', 'Duplex', 'Cobertura', 'Lote',
   <Faixa cena="captacao" sobre="Para proprietários" titulo="Cadastre seu imóvel" tituloHtml="Entregue sua chave a quem <em>cuida</em>" lead="Preencha os dados abaixo e um corretor entra em contato para conhecer o imóvel. Leva uns 3 minutos." migalhas={[{ nome: 'Cadastre seu imóvel' }]} />
   <section class="claro secao">
     <div class="wrap grade-2" style="align-items:start">
-      <form class="form painel" data-lead="captacao" method="post" action={u('/obrigado/')} data-revelar>
+      <form class="form painel" data-lead="captacao" method="post" action={u('/api/leads/')} data-revelar>
+        <input type="hidden" name="formulario" value="captacao" />
         <fieldset class="bloco"><legend>1. Seus dados</legend>
           <div class="duas">
             <div class="campo"><label for="cp-nome">Proprietário</label><input id="cp-nome" name="proprietario" autocomplete="name" /></div>

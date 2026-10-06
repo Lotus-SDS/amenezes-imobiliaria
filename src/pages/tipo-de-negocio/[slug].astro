@@ -3,15 +3,14 @@
 import Base from '../../layouts/Base.astro';
 import Faixa from '../../components/Faixa.astro';
 import Listagem from '../../components/Listagem.astro';
-import { imoveis, FINALIDADES, type Finalidade } from '../../lib/imoveis';
+import { publicados, FINALIDADES, type Finalidade } from '../../lib/imoveis';
+import { u } from '../../lib/url';
 import { waLink } from '../../../brand.config';
 
-export function getStaticPaths() {
-  const mapa: Record<string, Finalidade> = { venda: 'venda', alugar: 'anual', aluguel_temporada: 'temporada' };
-  return Object.entries(mapa).map(([slug, f]) => ({ params: { slug }, props: { f } }));
-}
-const { f } = Astro.props as { f: Finalidade };
-const lista = imoveis.filter((i) => i.finalidade === f);
+const mapa: Record<string, Finalidade> = { venda: 'venda', alugar: 'anual', aluguel_temporada: 'temporada' };
+const f = mapa[Astro.params.slug ?? ''];
+if (!f) return Astro.rewrite(u('/404/'));
+const lista = publicados().filter((i) => i.finalidade === f);
 const textos = {
   venda: { t: 'Imóveis à venda em Marataízes', h: 'Imóveis <em>à venda</em>', lead: `${lista.length} casas, apartamentos, lotes e pontos comerciais à venda. Lotes com financiamento próprio em até 120x.`, wa: 'Olá! Quero comprar um imóvel em Marataízes.' },
   anual: { t: 'Imóveis para alugar em Marataízes (aluguel anual)', h: 'Para <em>alugar</em> o ano todo', lead: `${lista.length} imóveis para aluguel anual, com valor do aluguel e IPTU em cada anúncio.`, wa: 'Olá! Procuro um imóvel para alugar (anual) em Marataízes.' },

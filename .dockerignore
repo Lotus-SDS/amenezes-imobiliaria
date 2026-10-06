@@ -3,5 +3,7 @@ dist
 .astro
 .claude
 .git
+data
+.credenciais-teste
 *.md
 !README.md

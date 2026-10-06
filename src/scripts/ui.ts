@@ -16,8 +16,8 @@ let estadoTier = '';
 // Medição (só depois do consentimento). ponytail: IDs fixos aqui; mover para brand.config se houver mais de um.
 const PIXEL_META = '2055688301851019';
 const GTM = ''; // [PREENCHER: ID do Google Tag Manager]
-// Endpoint dos formulários. Vazio = modo apresentação (mostra sucesso sem enviar).
-const ENDPOINT_LEAD = '';
+// Endpoint dos formulários: os contatos caem no painel (/admin/leads/)
+const ENDPOINT_LEAD = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/api/leads/`;
 
 export function iniciarUI() {
   if (iniciado) return;
@@ -250,15 +250,16 @@ function formularios() {
     f.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!f.reportValidity()) return;
-      const dados = Object.fromEntries(new FormData(f).entries());
+      // campos com várias escolhas (checkbox com o mesmo nome) viram lista
+      const fd = new FormData(f);
+      const dados: Record<string, unknown> = {};
+      for (const k of new Set(fd.keys())) { const v = fd.getAll(k).map(String); dados[k] = v.length > 1 ? v : v[0]; }
       if (dados.website || Date.now() - inicio < 2500) return; // honeypot + armadilha de tempo
       const btn = f.querySelector<HTMLButtonElement>('[type="submit"]');
       if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
       try {
-        if (ENDPOINT_LEAD) {
-          const r = await fetch(ENDPOINT_LEAD, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...dados, tipo: f.dataset.lead, pagina: location.href }) });
-          if (!r.ok) throw new Error(String(r.status));
-        }
+        const r = await fetch(ENDPOINT_LEAD, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...dados, formulario: f.dataset.lead, pagina: location.href }) });
+        if (!r.ok) throw new Error(String(r.status));
         f.classList.add('enviado');
         evento('lead_enviado', { tipo: f.dataset.lead });
         recompensa();

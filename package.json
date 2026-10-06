@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
+    "start": "node dist/server/entry.mjs",
+    "admin": "node scripts/criar-admin.mjs",
     "sync": "node scripts/sync-wp.mjs"
   },
   "dependencies": {
+    "@astrojs/node": "^11.1.7",
     "@fontsource-variable/fraunces": "^5.3.0",
     "@fontsource-variable/outfit": "^5.3.0",
     "astro": "^7.3.6",
@@ -21,5 +23,8 @@
   "devDependencies": {
     "@types/three": "^0.186.0",
     "node-html-parser": "^9.0.4"
+  },
+  "engines": {
+    "node": ">=22.13"
   }
 }

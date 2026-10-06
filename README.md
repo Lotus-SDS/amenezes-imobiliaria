@@ -1,43 +1,78 @@
 # A. Menezes Imobiliária: Horizonte Dourado
 
-Site novo da A. Menezes (Marataízes – ES), construído em **Astro + Three.js (WebGPU/TSL)**.
-O conteúdo é HTML estático, rápido e indexável. A experiência 3D é uma camada extra, carregada depois e só em aparelhos que aguentam.
+Site novo da A. Menezes (Marataízes – ES) **com painel de administração próprio**.
+**Astro (servidor Node) + Three.js (WebGPU/TSL)**. As páginas são montadas a cada visita a partir do banco do painel: uma alteração aparece no site na hora. A experiência 3D é uma camada extra, carregada depois e só em aparelhos que aguentam.
 
 > Arquitetura: [ARCHITECTURE.md](ARCHITECTURE.md). Briefing, conceitos, pendências e apresentação comercial são documentos internos e não ficam no repositório.
 
-## Prévia na Lotus
+## Painel de administração
 
-Publicado como site filho do Lotus_site em **https://lotusdev.com.br/amenezes-imobiliaria/**.
-- O build recebe `BASE_PATH=/amenezes-imobiliaria/`. O `astro.config.mjs` usa esse valor como `base`, e todos os links internos passam por `u()` (`src/lib/url.ts`).
-- Cada push na `main` deste repositório publica a versão nova (workflow `.github/workflows/lotus.yml`; precisa do secret `LOTUS_BOT_TOKEN`).
-- Sem `BASE_PATH`, o mesmo código gera o site para a raiz do domínio do cliente.
+Em **`/amenezes-imobiliaria/admin/`** (na prévia) ou `/admin/` (no domínio do cliente).
+
+| Tela | O que faz |
+|---|---|
+| **Imóveis** | Lista os imóveis (publicados, rascunhos e arquivados) com busca e filtros |
+| **Novo / editar imóvel** | Título, código, tipo, finalidade, endereço, bairro, mapa, ficha, preços, financiamento próprio, descrição, características, fotos e vídeo. Situação: *publicado*, *rascunho* ou *arquivado* (vendido ou alugado: sai do site sem apagar). Destaque na home |
+| **Fotos** | Arrastar e soltar, reordenar, escolher a capa (1ª foto) e remover. O navegador reduz cada foto antes de enviar (versões de 1600 e 800 px em WebP) |
+| **Contatos** | Tudo o que chega pelos formulários do site (contato, agendar visita, cadastro de imóvel, newsletter), com botão para responder no WhatsApp |
+| **Conta** | Trocar a senha e dar ou remover acesso a outras pessoas |
+
+**Segurança:**
+- **Senhas:** guardadas com scrypt; nunca ficam em texto.
+- **Sessão:** cookie `HttpOnly`, `Secure` e `SameSite=Strict`, válido por 14 dias.
+- **Tentativas de login:** 8 erros seguidos bloqueiam o IP por 15 minutos.
+- **Origem dos envios:** formulários vindos de outro site são recusados (`security.checkOrigin`).
+- **Fotos:** só são aceitas WebP e JPEG, conferidas pela assinatura do arquivo, com até 6 MB.
+- **Formulários do site:** honeypot contra robôs e limite de 20 envios por hora por IP.
+
+**Primeiro acesso / esqueci a senha:** no servidor, `docker compose -f deploy/compose.yml exec app node scripts/criar-admin.mjs`. O script pede o e-mail e a senha no terminal; se o e-mail já existir, ele troca a senha.
+
+### Dados
+- **Banco:** SQLite nativo do Node (`node:sqlite`) em `DATA_DIR`, que em produção é o volume Docker `dados`. As fotos enviadas ficam em `DATA_DIR/fotos`.
+- **Importação inicial:** na primeira vez que o app sobe, o banco importa os 301 imóveis do retrato do WordPress (`src/data/imoveis.json`). Dali em diante, o painel é a fonte oficial.
+- **Fotos antigas:** as fotos importadas continuam apontando para o WordPress antigo. Antes de desligar o WordPress, é preciso migrá-las (ver PENDÊNCIAS).
+- **Backup do volume:**
+  ```bash
+  docker run --rm -v amenezes_dados:/data -v "$PWD":/b alpine tar czf /b/amenezes-$(date +%F).tgz -C /data .
+  ```
+
+## Servidor (stack própria na VPS da Lotus)
+
+O app roda no mesmo servidor e no mesmo Traefik da Lotus, mas numa **stack própria**: aplicação com banco não vira submodule do Lotus_site, conforme o `docs/ci-cd.md` dele.
+
+```bash
+# primeira vez
+git clone https://github.com/Lotus-SDS/amenezes-imobiliaria.git /opt/amenezes
+cd /opt/amenezes && git switch main
+docker compose -f deploy/compose.yml up -d --build
+docker compose -f deploy/compose.yml exec app node scripts/criar-admin.mjs
+
+# atualizar
+cd /opt/amenezes && git pull && docker compose -f deploy/compose.yml up -d --build
+```
+
+O `deploy/compose.yml` entra na rede `web_network` e responde em `lotusdev.com.br/amenezes-imobiliaria/` com certificado `myresolver`. A prioridade alta faz essa rota vencer a do site estático antigo enquanto ela existir.
 
 ---
 
 ## Rodar localmente
 
-Requisitos: **Node 20+** (testado no 24).
+Requisitos: **Node 22.13+** (testado no 24).
 
 ```bash
 npm install
 npm run dev          # http://localhost:4321  (desenvolvimento, recarrega ao salvar)
+npm run admin        # cria um acesso ao painel no banco local (./data)
 ```
 
-Versão final, idêntica à de produção (use esta para gravar o vídeo):
+Versão de produção:
 
 ```bash
-npm run build        # gera dist/ (≈ 323 páginas em ~2 s)
-npm run preview      # http://localhost:4321
-```
-
-### Atualizar os imóveis
-
-Os 301 imóveis vêm de um retrato do site atual, salvo em `src/data/imoveis.json`. Para atualizar:
-
-```bash
-npm run sync         # lê amenezes.com.br (API pública + páginas) e regrava src/data/
 npm run build
+npm start            # http://localhost:4321  (banco em ./data)
 ```
+
+Para testar com o caminho da prévia, use `BASE_PATH=/amenezes-imobiliaria/ npm run build`.
 
 ---
 
@@ -127,15 +162,11 @@ src/
 
 ---
 
-## Publicar em produção
+## Publicar no domínio do cliente (futuro)
 
-O plano completo está em [ARCHITECTURE.md](ARCHITECTURE.md) §1. Em resumo:
-1. O WordPress continua como painel (o Sérgio cadastra imóveis igual a hoje).
-2. Um mu-plugin expõe os campos do JetEngine na API e recebe os formulários (`/wp-json/amenezes/v1/lead`). No front, basta preencher `ENDPOINT_LEAD` em `src/scripts/ui.ts`.
-3. O `dist/` vai para o `public_html` da Hostinger. Um `.htaccess` serve o HTML estático quando ele existe e manda o resto para o WordPress (painel, checkout, reservas).
-4. GitHub Actions refaz o build quando um imóvel é salvo (cerca de 3 min).
+O mesmo container serve o domínio do cliente: build sem `BASE_PATH` (raiz) e uma regra de Traefik (ou outro proxy) para `amenezes.com.br`. O WordPress antigo pode ser desligado depois de migrar as fotos antigas e refazer a reserva online de temporada. Essas duas pendências estão listadas para o cliente.
 
-Itens que dependem do cliente estão em [PENDENCIAS.md](PENDENCIAS.md).
+> As medições de performance acima foram feitas na versão estática. A versão com servidor entrega o mesmo HTML, montado em cerca de 5 ms por página; vale medir de novo depois do deploy.
 
 ### Decisões técnicas em relação ao pedido original
 - **ScrollTrigger:** foi trocado por IntersectionObserver nativo, mais a matemática própria de rolagem do `ScrollDirector`. É uma biblioteca a menos e acaba com os recálculos de layout. GSAP continua nas animações e o Lenis na rolagem suave.

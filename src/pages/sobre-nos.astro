@@ -4,7 +4,8 @@ import Base from '../layouts/Base.astro';
 import Faixa from '../components/Faixa.astro';
 import Icone from '../components/Icone.astro';
 import { brand, waLink, anos } from '../../brand.config';
-import { imoveis } from '../lib/imoveis';
+import { publicados } from '../lib/imoveis';
+const imoveis = publicados();
 ---
 <Base titulo="A Empresa — desde 1957 em Marataízes" descricao={`Fundada em 1957 por Amilar de Menezes, a A. Menezes é uma imobiliária de família em Marataízes – ES: loteamentos, compra, venda, locação e avaliação de imóveis há ${anos()} anos.`}>
   <Faixa cena="sobre1957" sobre="A Empresa" titulo="Uma história de família desde 1957" tituloHtml={`${anos()} anos de <em>Marataízes</em>`} lead="Uma imobiliária de família, fundada por Amilar de Menezes e administrada hoje por Sérgio Menezes." migalhas={[{ nome: 'A Empresa' }]} />

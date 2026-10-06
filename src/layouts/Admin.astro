@@ -1,0 +1,41 @@
+---
+// Layout do painel: leve, claro, sem a experiência 3D. Fica fora do Google.
+import '@fontsource-variable/fraunces/opsz.css';
+import '@fontsource-variable/outfit/index.css';
+import '../styles/admin.css';
+import { u } from '../lib/url';
+import { naoLidos } from '../server/leads';
+
+interface Props { titulo: string; ativo?: 'imoveis' | 'leads' | 'conta'; semMenu?: boolean }
+const { titulo, ativo, semMenu = false } = Astro.props;
+const usuario = Astro.locals.usuario;
+const pendentes = usuario ? naoLidos() : 0;
+---
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>{titulo} · Painel A. Menezes</title>
+  <link rel="icon" href={u('/favicon.svg')} type="image/svg+xml" />
+</head>
+<body>
+  {!semMenu && usuario && (
+    <header class="adm-topo">
+      <a class="adm-marca" href={u('/admin/')}><img src={u('/img/logo-amenezes.png')} alt="" width="96" height="38" /> <span>Painel</span></a>
+      <nav aria-label="Painel">
+        <a href={u('/admin/')} aria-current={ativo === 'imoveis' ? 'page' : undefined}>Imóveis</a>
+        <a href={u('/admin/leads/')} aria-current={ativo === 'leads' ? 'page' : undefined}>Contatos {pendentes > 0 && <b class="adm-badge">{pendentes}</b>}</a>
+        <a href={u('/admin/conta/')} aria-current={ativo === 'conta' ? 'page' : undefined}>Conta</a>
+        <a href={u('/')} target="_blank" rel="noopener">Ver site ↗</a>
+      </nav>
+      <form method="post" action={u('/api/admin/sair/')}>
+        <button class="adm-link" type="submit" title={usuario.email}>Sair</button>
+      </form>
+    </header>
+  )}
+  <main class="adm-main"><slot /></main>
+  <div class="adm-aviso" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

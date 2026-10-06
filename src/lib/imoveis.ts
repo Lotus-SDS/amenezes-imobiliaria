@@ -1,13 +1,41 @@
-// Acesso aos dados dos imóveis (gerados por `npm run sync`) + formatação.
-import dados from '../data/imoveis.json';
-import tax from '../data/taxonomias.json';
+// Acesso aos imóveis (banco do painel, via src/server/imoveis.ts) + formatação usada pelas páginas.
+import { listarPublicados } from '../server/imoveis';
 import { brand, waLink } from '../../brand.config';
 
-export type Foto = { full: string; src: string };
-export type Imovel = (typeof dados)[number] & { fotos: Foto[] };
+export type Foto = { full: string; src: string; alt?: string };
+export type Imovel = {
+  id: number; slug: string; url: string; status: string; linkOriginal?: string;
+  codigo: string; titulo: string; subtitulo?: string;
+  finalidade: 'venda' | 'anual' | 'temporada'; tipo: string; tipoSlug: string;
+  bairro: string; cidade: string; endereco: string;
+  quartos: number | null; banheiros: number | null; garagem: number | null; suites: number | null;
+  area: number | null; pessoas: number | null;
+  preco: number | null; aluguel: number | null; iptu: number | null;
+  precos: { rotulo: string; valor: number | null }[];
+  caracteristicas: string[]; descricaoHtml: string;
+  financiamento?: boolean; destaque?: boolean;
+  capa: { src: string; srcset: string; w: number; h: number; alt: string } | null;
+  fotos: Foto[]; geo: { lat: number; lng: number } | null; video: string | null; modificado: string;
+};
 
-export const imoveis = dados as Imovel[];
-export const taxonomias = tax;
+// Lista publicada no momento da requisição (cache em memória no servidor, renovado a cada alteração do painel)
+export const publicados = () => listarPublicados() as Imovel[];
+
+// Tipos e bairros com contagem, calculados da lista atual
+export function taxonomiasDe(lista: Imovel[]) {
+  const tipos = new Map<string, { name: string; slug: string; count: number }>();
+  const bairros = new Map<string, number>();
+  for (const i of lista) {
+    const t = tipos.get(i.tipoSlug) ?? { name: i.tipo, slug: i.tipoSlug, count: 0 };
+    t.count++;
+    tipos.set(i.tipoSlug, t);
+    if (i.bairro) bairros.set(i.bairro, (bairros.get(i.bairro) ?? 0) + 1);
+  }
+  return {
+    tipos: [...tipos.values()].filter((t) => t.slug).sort((a, b) => b.count - a.count),
+    bairros: [...bairros].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
+  };
+}
 
 export const FINALIDADES = {
   venda: { nome: 'Comprar', rotulo: 'Venda', url: '/tipo-de-negocio/venda/', cena: 'interna-venda' },
@@ -26,7 +54,7 @@ export function precoPrincipal(i: Imovel) {
   return { valor: 'Consulte', sufixo: '' };
 }
 
-export const temFinanciamento = (i: Imovel) => /financ/i.test(i.descricaoHtml);
+export const temFinanciamento = (i: Imovel) => !!i.financiamento || /financ/i.test(i.descricaoHtml);
 
 export const local = (i: Imovel) => [i.bairro, i.cidade].filter(Boolean).join(' · ');
 
@@ -69,8 +97,10 @@ export function tituloBonito(i: Imovel) {
 export const altFoto = (i: Imovel, n = 0) => `${i.tipo}${i.bairro ? ` em ${i.bairro}` : ''}, ${i.cidade} — foto ${n + 1}`;
 
 // Destaques da home: os mais recentes com foto, equilibrando finalidades
-export function destaques(n = 6) {
-  const porFin = (f: Finalidade) => imoveis.filter((i) => i.finalidade === f && i.capa).sort((a, b) => b.modificado.localeCompare(a.modificado));
+export function destaques(imoveis: Imovel[], n = 6) {
+  // os marcados como destaque no painel vêm primeiro; depois, os mais recentes
+  const peso = (i: Imovel) => (i.destaque ? '1' : '0') + i.modificado;
+  const porFin = (f: Finalidade) => imoveis.filter((i) => i.finalidade === f && i.capa).sort((a, b) => peso(b).localeCompare(peso(a)));
   const listas = [porFin('venda'), porFin('temporada'), porFin('anual')];
   const out: Imovel[] = [];
   const fotos = new Set<string>();
@@ -85,13 +115,4 @@ export function destaques(n = 6) {
   return out;
 }
 
-// JSON enxuto para a busca no cliente
-export function indiceBusca() {
-  return imoveis.map((i) => ({
-    u: i.url, c: i.codigo, t: tituloBonito(i), f: i.finalidade, tp: i.tipo, b: i.bairro, q: i.quartos, a: i.area,
-    p: i.finalidade === 'venda' ? i.preco : i.finalidade === 'anual' ? i.aluguel : null,
-    img: i.capa?.src || '', fin: temFinanciamento(i) ? 1 : 0, s: specs(i).slice(0, 3).join(' · '),
-  }));
-}
-
-export const contagem = (f: Finalidade) => imoveis.filter((i) => i.finalidade === f).length;
+export const contagem = (imoveis: Imovel[], f: Finalidade) => imoveis.filter((i) => i.finalidade === f).length;

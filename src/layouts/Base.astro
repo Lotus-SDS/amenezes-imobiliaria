@@ -124,7 +124,8 @@ const cssVars = `:root{--amarelo:${brand.cores.amarelo};--azul:${brand.cores.azu
         <div>
           <img src={u('/img/logo-amenezes.png')} width="160" height="63" alt="A. Menezes Imobiliária" loading="lazy" />
           <p class="frase">Há {anos()} anos acendendo luzes na orla.</p>
-          <form class="form news" data-lead="newsletter" method="post" action={u('/obrigado/')}>
+          <form class="form news" data-lead="newsletter" method="post" action={u('/api/leads/')}>
+            <input type="hidden" name="formulario" value="newsletter" />
             <label for="news-email">Receba imóveis novos e oportunidades por e-mail</label>
             <div class="news-linha">
               <input id="news-email" name="email" type="email" autocomplete="email" placeholder="seu@email.com" required />

@@ -6,13 +6,13 @@ import Faixa from '../../components/Faixa.astro';
 import Card from '../../components/Card.astro';
 import LeadForm from '../../components/LeadForm.astro';
 import Icone from '../../components/Icone.astro';
-import { imoveis, type Imovel, FINALIDADES, precoPrincipal, local, tituloBonito, waImovel, waVisita, temFinanciamento, reais, altFoto } from '../../lib/imoveis';
+import { publicados, FINALIDADES, precoPrincipal, local, tituloBonito, waImovel, waVisita, temFinanciamento, reais, altFoto } from '../../lib/imoveis';
 import { brand } from '../../../brand.config';
 
-export function getStaticPaths() {
-  return imoveis.map((i) => ({ params: { slug: i.slug }, props: { i } }));
-}
-const { i } = Astro.props as { i: Imovel };
+const imoveis = publicados();
+const achado = imoveis.find((x) => x.slug === Astro.params.slug);
+if (!achado) return Astro.rewrite(u('/404/'));
+const i = achado;
 const fin = FINALIDADES[i.finalidade];
 const preco = precoPrincipal(i);
 const titulo = tituloBonito(i);

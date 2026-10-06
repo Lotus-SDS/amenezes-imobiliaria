@@ -2,7 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import Faixa from '../../components/Faixa.astro';
 import Listagem from '../../components/Listagem.astro';
-import { imoveis } from '../../lib/imoveis';
+import { publicados } from '../../lib/imoveis';
+const imoveis = publicados();
 ---
 <Base titulo="Todos os imóveis em Marataízes" descricao={`${imoveis.length} imóveis em Marataízes para comprar, alugar e temporada. Busque por código, bairro, tipo e número de quartos.`}>
   <Faixa cena="interna" sobre="Imóveis" titulo="Todos os imóveis" tituloHtml="Todos os <em>imóveis</em>" lead="Casas, apartamentos, lotes e salas comerciais em Marataízes e região — atualizados direto da nossa carteira." migalhas={[{ nome: 'Imóveis' }]} />
