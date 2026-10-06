@@ -1,0 +1,22 @@
+---
+import { u } from '../lib/url';
+// Topo das páginas internas: a cena 3D aparece só nesta faixa (o render pausa quando ela sai da tela).
+interface Props { cena?: string; sobre?: string; titulo: string; tituloHtml?: string; lead?: string; migalhas?: { href?: string; nome: string }[]; compacta?: boolean }
+const { cena = 'interna', sobre, titulo, tituloHtml, lead, migalhas = [], compacta = false } = Astro.props;
+---
+<section class:list={['faixa', { 'faixa--compacta': compacta }]} data-cena={cena} data-cena-faixa>
+  <div class="wrap">
+    {migalhas.length > 0 && (
+      <nav class="migalhas" aria-label="Você está em">
+        <ol>
+          <li><a href={u('/')}>Início</a></li>
+          {migalhas.map((m) => <li>{m.href ? <a href={u(m.href)}>{m.nome}</a> : <span aria-current="page">{m.nome}</span>}</li>)}
+        </ol>
+      </nav>
+    )}
+    {sobre && <p class="sobre-titulo surge revelado">{sobre}</p>}
+    {tituloHtml ? <h1 set:html={tituloHtml} /> : <h1>{titulo}</h1>}
+    {lead && <p class="lead">{lead}</p>}
+    <slot />
+  </div>
+</section>

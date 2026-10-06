@@ -1,0 +1,51 @@
+---
+import { u } from '../lib/url';
+import Base from '../layouts/Base.astro';
+import Faixa from '../components/Faixa.astro';
+import Icone from '../components/Icone.astro';
+import { brand, waLink, anos } from '../../brand.config';
+import { imoveis } from '../lib/imoveis';
+---
+<Base titulo="A Empresa — desde 1957 em Marataízes" descricao={`Fundada em 1957 por Amilar de Menezes, a A. Menezes é uma imobiliária de família em Marataízes – ES: loteamentos, compra, venda, locação e avaliação de imóveis há ${anos()} anos.`}>
+  <Faixa cena="sobre1957" sobre="A Empresa" titulo="Uma história de família desde 1957" tituloHtml={`${anos()} anos de <em>Marataízes</em>`} lead="Uma imobiliária de família, fundada por Amilar de Menezes e administrada hoje por Sérgio Menezes." migalhas={[{ nome: 'A Empresa' }]} />
+
+  <section class="claro secao">
+    <div class="wrap grade-2" style="align-items:start">
+      <div class="prosa-pagina" data-revelar>
+        <p class="sobre-titulo">Quem somos</p>
+        <h2 style="margin-top:0">Nasceu de um sonho: <em>construir</em> e ver a obra pronta.</h2>
+        <p>Em 26 de dezembro de 1957, <b>Amilar de Menezes</b> fundou a A.MENEZES Empreendimentos Imobiliários. Empreendedor, investiu na ideia o seu dinheiro, o seu tempo e a sua energia — e deixou para a empresa um ideal que segue o mesmo até hoje: melhorar a vida das pessoas facilitando a conquista do imóvel próprio.</p>
+        <p>Começamos com <b>loteamentos</b>. Com o tempo, a empresa se especializou em todo o mercado imobiliário: compra, venda, locação anual, temporada e avaliação de imóveis — sempre em Marataízes, no sul do Espírito Santo.</p>
+        <h2>O que nos move</h2>
+        <p>Comprar um imóvel é o sonho de muita gente, e o papel de uma imobiliária é se comprometer com esse sonho. Por isso trabalhamos com imóveis bem cuidados, informação clara e seriedade no relacionamento — valores que construíram a credibilidade da A. Menezes ao longo de {anos()} anos.</p>
+        <p>Hoje, sob a administração de <b>{brand.gestor}</b>, você fala direto com quem decide. Conhecemos cada bairro da cidade — de Barra a Marobá, de Areias Negras à Lagoa do Siri — e dizemos com franqueza o que vale a pena.</p>
+        <h2>Por que investir em Marataízes</h2>
+        <p>Marataízes vive mais um ciclo promissor de desenvolvimento, impulsionado pela economia do petróleo e do pré-sal no sul do Espírito Santo. Para quem quer morar bem, ter a sua casa de praia ou garantir uma renda extra com aluguel, o momento é agora.</p>
+        <p>Proprietário? Entregue seu imóvel à A. Menezes e tenha a tranquilidade de saber que o seu patrimônio está nas mãos de quem conhece o mercado local há mais de seis décadas.</p>
+        <!-- [PREENCHER: prêmios citados no texto antigo ("inúmeras premiações") — nome, ano e comprovação, se o cliente quiser exibir] -->
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:2rem">
+          <a class="btn btn--azul" href={u('/cadastre-seu-imovel/')}>Anunciar meu imóvel</a>
+          <a class="btn btn--wa" href={waLink('Olá! Gostaria de falar com a A. Menezes.')} data-wa target="_blank" rel="noopener"><Icone nome="wa" /> Falar pelo WhatsApp</a>
+        </div>
+      </div>
+      <aside class="painel" data-revelar style="position:sticky;top:100px">
+        <p class="sobre-titulo">Linha do tempo</p>
+        <ol class="tempo">
+          <li><b class="num">1957</b><span>Amilar de Menezes funda a A.MENEZES Empreendimentos Imobiliários, começando pelos loteamentos.</span></li>
+          <li><b class="num">1987</b><span>Registro no CNPJ (antes, a empresa já operava com o antigo CGC).</span></li>
+          <li><b>Hoje</b><span>{imoveis.length} imóveis na carteira, financiamento próprio de lotes em até 120x e reserva online de temporada, com administração de {brand.gestor}.</span></li>
+          <li><b class="num">2027</b><span>70 anos de A. Menezes.</span></li>
+        </ol>
+        <p style="margin:1.4rem 0 0;font-size:.9rem;color:var(--texto-escuro-2)">{brand.razaoSocial}<br />{brand.contato.endereco.rua}<br />{brand.contato.endereco.cidade} – {brand.contato.endereco.uf}</p>
+      </aside>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .tempo { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; border-left: 1px solid rgba(46, 49, 146, .25); }
+  .tempo li { display: grid; gap: 4px; padding-left: 20px; position: relative; }
+  .tempo li::before { content: ""; position: absolute; left: -5px; top: 10px; width: 9px; height: 9px; border-radius: 50%; background: var(--amarelo); box-shadow: 0 0 0 3px #fff, 0 0 0 4px rgba(46, 49, 146, .3); }
+  .tempo b { font-family: var(--fonte-display); font-size: 1.7rem; font-weight: 420; color: var(--azul); line-height: 1; }
+  .tempo span { font-size: .95rem; color: var(--texto-escuro-2); }
+</style>

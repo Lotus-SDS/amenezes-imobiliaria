@@ -1,0 +1,52 @@
+---
+// Página nova: o diferencial que estava escondido dentro da descrição dos lotes
+import Base from '../layouts/Base.astro';
+import Faixa from '../components/Faixa.astro';
+import Card from '../components/Card.astro';
+import Icone from '../components/Icone.astro';
+import { waLink } from '../../brand.config';
+import { imoveis, temFinanciamento } from '../lib/imoveis';
+const lista = imoveis.filter((i) => temFinanciamento(i) && i.finalidade === 'venda');
+// Tabela real publicada no anúncio do Lote 754, Quadra 37 — Praia de Marobá
+const tabela: [number, string, string][] = [[12, '5.667,00', '68.004,00'], [24, '3.166,00', '75.984,00'], [36, '2.347,00', '84.492,00'], [48, '1.949,00', '93.552,00'], [60, '1.718,00', '103.080,00'], [72, '1.571,00', '113.112,00'], [84, '1.472,00', '123.648,00'], [96, '1.402,00', '134.592,00'], [108, '1.351,00', '145.908,00'], [120, '1.313,00', '157.560,00']];
+---
+<Base titulo="Financiamento próprio de lotes em até 120x" descricao={`Compre seu lote em Marataízes parcelado em até 120 meses direto com a A. Menezes, sem banco: 1,98% a.m. + IGPM. ${lista.length} imóveis com financiamento próprio.`}>
+  <Faixa cena="financiamento" sobre="Financiamento próprio" titulo="Financiamento próprio em até 120x" tituloHtml="Até <em>120x</em>, direto com a gente" lead={`${lista.length} lotes e casas que você pode parcelar com a própria imobiliária — sem banco, sem burocracia de agência.`} migalhas={[{ nome: 'Financiamento próprio' }]}>
+    <div class="acoes-faixa"><a class="btn btn--wa" href={waLink('Olá! Quero simular o financiamento próprio de um lote.')} data-wa target="_blank" rel="noopener" data-magnetic><Icone nome="wa" /> Simular pelo WhatsApp</a></div>
+  </Faixa>
+  <section class="claro secao">
+    <div class="wrap grade-2" style="align-items:start">
+      <div class="prosa-pagina" data-revelar>
+        <p class="sobre-titulo">Como funciona</p>
+        <h2 style="margin-top:0">Condições</h2>
+        <ul class="condicoes">
+          <li><b>Até 120 meses</b> para pagar</li>
+          <li><b>1,98% ao mês</b> + correção anual pelo IGPM</li>
+          <li><b>Entrada mínima</b> definida para cada imóvel (a partir de R$ 15 mil)</li>
+          <li><b>Sujeito à análise de crédito</b>, feita pela própria A. Menezes</li>
+        </ul>
+        <p>As condições exatas — preço à vista, entrada e simulação completa — estão na descrição de cada imóvel. Na dúvida, mande o código pelo WhatsApp e a gente simula para você.</p>
+      </div>
+      <div class="painel" data-revelar>
+        <p class="sobre-titulo">Exemplo real</p>
+        <h3 style="margin-bottom:.4rem">Lote 754, Quadra 37 — Praia de Marobá</h3>
+        <p style="color:var(--texto-escuro-2)">À vista R$ 75.000,00 · entrada R$ 15.000,00 · saldo de R$ 60.000,00</p>
+        <div class="prosa-pagina"><table>
+          <thead><tr><th>Parcelas</th><th>Valor da parcela</th><th>Total a prazo</th></tr></thead>
+          <tbody>{tabela.map(([n, p, t]) => <tr><td class="num">{n}x</td><td class="num">R$ {p}</td><td class="num">R$ {t}</td></tr>)}</tbody>
+        </table></div>
+        <p style="font-size:.8rem;color:var(--texto-escuro-2);margin-top:12px">Taxa de 1,98% a.m. + correção anual pelo IGPM. Valores conforme o anúncio publicado; sujeitos à análise de crédito.</p>
+      </div>
+    </div>
+    <div class="wrap" style="margin-top:80px">
+      <h2 style="margin-bottom:24px;font-size:clamp(1.8rem,3vw,2.6rem)">Imóveis com financiamento próprio</h2>
+      <div class="cards">{lista.map((i) => <Card i={i} />)}</div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .condicoes { list-style: none; padding: 0; display: grid; gap: 12px; }
+  .condicoes li { padding: 14px 18px; border-radius: 14px; background: #fff; box-shadow: 0 1px 0 var(--linha); }
+  .condicoes b { color: var(--azul); }
+</style>

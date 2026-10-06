@@ -1,0 +1,211 @@
+---
+import { u } from '../lib/url';
+import Base from '../layouts/Base.astro';
+import Card from '../components/Card.astro';
+import LeadForm from '../components/LeadForm.astro';
+import Icone from '../components/Icone.astro';
+import { brand, waLink, anos } from '../../brand.config';
+import { imoveis, destaques, contagem, taxonomias, temFinanciamento } from '../lib/imoveis';
+
+const nVenda = contagem('venda'), nAnual = contagem('anual'), nTemp = contagem('temporada');
+const nLotes = imoveis.filter((i) => i.tipoSlug === 'lote' && i.finalidade === 'venda').length;
+const nBairros = taxonomias.bairros.length;
+const nFin = imoveis.filter(temFinanciamento).length;
+const porTipo = (f: string) => Object.entries(imoveis.filter((i) => i.finalidade === f).reduce((a: Record<string, number>, i) => ((a[i.tipo] = (a[i.tipo] || 0) + 1), a), {})).sort((a, b) => b[1] - a[1]).slice(0, 5);
+const tipoUrl: Record<string, string> = Object.fromEntries(taxonomias.tipos.map((t) => [t.name, `/tipo-de-imovel/${t.slug}/`]));
+const comerciais = taxonomias.tipos.filter((t) => ['loja', 'galpao', 'ponto-comercial', 'area-comercial', 'garagem'].includes(t.slug));
+const lista = destaques(6);
+
+// Linha de luzes da orla em CSS (o "loader" que vira a cena)
+let s = 7;
+const r = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+const luzes = Array.from({ length: 90 }, (_, k) => ({ x: (k / 90) * 78 + r() * 1.2, y: 20 + (k / 90) * 14 - r() * 18, d: r() * 2.4 }));
+
+const descricao = `Imóveis em Marataízes para comprar, alugar e temporada com a imobiliária da família Menezes, desde 1957. ${imoveis.length} imóveis, financiamento próprio de lotes em até 120x e atendimento direto com Sérgio Menezes.`;
+---
+<Base titulo="Imóveis em Marataízes desde 1957 — A. Menezes Imobiliária" descricao={descricao} cena="hero">
+
+  <!-- ATO 1–4 · HERO -->
+  <section class="hero" data-cena="hero" aria-labelledby="h1">
+    <div class="orla-css" aria-hidden="true">{luzes.map((l) => <i style={`left:${l.x}%;top:${l.y}px;animation-delay:${l.d}s`} />)}</div>
+    <div class="wrap">
+      <p class="sobre-titulo surge">Desde 1957 · Marataízes – ES</p>
+      <h1 id="h1"><span class="linha-mascara"><span>Seu <em>lugar</em></span></span><span class="linha-mascara"><span>em Marataízes.</span></span></h1>
+      <p class="lead surge">Comprar, alugar ou passar o verão com a imobiliária da família Menezes — {anos()} anos ajudando gente a encontrar o seu canto no litoral sul capixaba.</p>
+      <div class="surge">
+        <nav class="portas" aria-label="O que você procura">
+          <a class="porta" href={u('/tipo-de-negocio/venda/')} data-magnetic><b>Comprar</b><span>casas, aptos e lotes</span><small class="n num">{nVenda}</small></a>
+          <a class="porta" href={u('/tipo-de-negocio/alugar/')} data-magnetic><b>Alugar</b><span>para morar o ano todo</span><small class="n num">{nAnual}</small></a>
+          <a class="porta" href={u('/tipo-de-negocio/aluguel_temporada/')} data-magnetic><b>Temporada</b><span>reserva online</span><small class="n num">{nTemp}</small></a>
+        </nav>
+        <form class="busca-codigo" data-busca role="search" action={u('/imoveis/')}>
+          <label><Icone nome="busca" /><span class="sr-only">Buscar por código, bairro ou tipo</span><input name="q" placeholder="Código, bairro ou tipo (ex.: 204, Areias Negras, lote)" /></label>
+          <a class="btn btn--wa" href={waLink('Olá! Estou procurando um imóvel em Marataízes e gostaria de ajuda.')} data-wa target="_blank" rel="noopener"><Icone nome="wa" /> Falar com o Sérgio</a>
+        </form>
+      </div>
+      <p class="hero-meta surge"><span><b>{imoveis.length}</b> imóveis disponíveis</span><span><b>Financiamento próprio</b> em lotes</span><span>Atendimento direto com <b>{brand.gestor}</b></span></p>
+    </div>
+  </section>
+
+  <!-- COMPRAR -->
+  <section class="capitulo" data-cena="comprar" aria-labelledby="c1">
+    <div class="wrap"><div class="texto" data-revelar>
+      <p class="sobre-titulo">01 · Comprar</p>
+      <h2 id="c1"><span class="linha-mascara"><span>Uma casa para</span></span><span class="linha-mascara"><span><em>começar.</em></span></span></h2>
+      <p class="lead surge">{nVenda} imóveis à venda em Marataízes e região — da casa perto da praia ao apartamento no centro. A gente conhece cada rua e diz com franqueza o que vale a pena.</p>
+      <div class="chips surge">{porTipo('venda').map(([t, n]) => <a class="chip" href={u(tipoUrl[t] || '/tipo-de-negocio/venda/')}>{t} <small class="num">{n}</small></a>)}</div>
+      <div class="acoes surge">
+        <a class="btn" href={u('/tipo-de-negocio/venda/')} data-magnetic>Ver imóveis à venda <Icone nome="seta" /></a>
+        <a class="btn btn--vidro" href={waLink('Olá! Quero comprar um imóvel em Marataízes.')} data-wa target="_blank" rel="noopener"><Icone nome="wa" /> Quero comprar</a>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ALUGAR -->
+  <section class="capitulo" data-cena="alugar" aria-labelledby="c2">
+    <div class="wrap"><div class="texto" data-revelar>
+      <p class="sobre-titulo">02 · Alugar</p>
+      <h2 id="c2"><span class="linha-mascara"><span>Para morar o ano</span></span><span class="linha-mascara"><span><em>inteiro.</em></span></span></h2>
+      <p class="lead surge">{nAnual} imóveis para aluguel anual — residenciais e comerciais, com valor do aluguel e do IPTU às claras em cada anúncio.</p>
+      <div class="chips surge">{porTipo('anual').map(([t, n]) => <a class="chip" href={u(tipoUrl[t] || '/tipo-de-negocio/alugar/')}>{t} <small class="num">{n}</small></a>)}</div>
+      <div class="acoes surge">
+        <a class="btn" href={u('/tipo-de-negocio/alugar/')} data-magnetic>Ver imóveis para alugar <Icone nome="seta" /></a>
+        <a class="btn btn--vidro" href={waLink('Olá! Procuro um imóvel para alugar (anual) em Marataízes.')} data-wa target="_blank" rel="noopener"><Icone nome="wa" /> Quero alugar</a>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- TEMPORADA -->
+  <section class="capitulo" data-cena="temporada" aria-labelledby="c3">
+    <div class="wrap"><div class="texto" data-revelar>
+      <p class="sobre-titulo">03 · Temporada</p>
+      <h2 id="c3"><span class="linha-mascara"><span>O verão já tem</span></span><span class="linha-mascara"><span><em>endereço.</em></span></span></h2>
+      <p class="lead surge">{nTemp} casas e apartamentos para a temporada, com reserva online: escolha as datas, veja o total na hora e garanta o seu lugar no litoral.</p>
+      <div class="acoes surge">
+        <a class="btn" href={u('/tipo-de-negocio/aluguel_temporada/')} data-magnetic>Escolher minhas datas <Icone nome="cal" /></a>
+        <a class="btn btn--vidro" href={waLink('Olá! Quero alugar um imóvel para a temporada em Marataízes.')} data-wa target="_blank" rel="noopener"><Icone nome="wa" /> Tirar dúvidas</a>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- DESTAQUES -->
+  <section class="secao" data-cena="destaques" aria-labelledby="c4">
+    <div class="wrap">
+      <div data-revelar style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:2.4rem">
+        <div><p class="sobre-titulo">Acabaram de chegar</p><h2 id="c4"><span class="linha-mascara"><span>Imóveis em <em>destaque</em></span></span></h2></div>
+        <a class="btn btn--vidro surge" href={u('/imoveis/')}>Ver todos os {imoveis.length} imóveis <Icone nome="seta" /></a>
+      </div>
+      <div class="cards cards--vidro">{lista.map((i) => <div data-revelar class="surge"><Card i={i} /></div>)}</div>
+    </div>
+  </section>
+
+  <!-- LOTES -->
+  <section class="capitulo" data-cena="lote" aria-labelledby="c5">
+    <div class="wrap"><div class="texto" data-revelar>
+      <p class="sobre-titulo">04 · Lotes</p>
+      <h2 id="c5"><span class="linha-mascara"><span>O terreno dos</span></span><span class="linha-mascara"><span>seus <em>planos.</em></span></span></h2>
+      <p class="lead surge">A A. Menezes começou com loteamentos, em 1957. Hoje são {nLotes} lotes à venda — em Marobá, Maraguá, Lagoa do Siri, Novo Horizonte e outros bairros de Marataízes.</p>
+      <div class="acoes surge"><a class="btn" href={u('/tipo-de-imovel/lote/')} data-magnetic>Ver lotes <Icone nome="seta" /></a></div>
+    </div></div>
+  </section>
+
+  <!-- FINANCIAMENTO PRÓPRIO -->
+  <section class="capitulo" data-cena="financiamento" aria-labelledby="c6">
+    <div class="wrap"><div class="texto" data-revelar>
+      <p class="sobre-titulo">Financiamento próprio</p>
+      <h2 id="c6"><span class="linha-mascara"><span>Até <em class="num">120x</em>,</span></span><span class="linha-mascara"><span>direto com a gente.</span></span></h2>
+      <p class="lead surge">{nFin} lotes e casas financiados pela própria imobiliária, sem banco: taxa de 1,98% ao mês + correção anual pelo IGPM, entrada a partir de R$ 15 mil, sujeito à análise de crédito.</p>
+      <div class="painel surge" style="margin-top:1.6rem;max-width:520px">
+        <p style="margin:0 0 .4rem;font-size:.85rem;color:var(--texto-claro-2)">Exemplo real · Lote 754, Quadra 37 — Praia de Marobá</p>
+        <p style="margin:0;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline">
+          <span><b class="display num" style="font-size:2.2rem;color:var(--amarelo)">R$ 75 mil</b> à vista</span>
+          <span>ou entrada de R$ 15 mil + <b class="display num" style="font-size:2.2rem;color:var(--amarelo)">120x</b> de R$ 1.313</span>
+        </p>
+      </div>
+      <div class="acoes surge">
+        <a class="btn" href={u('/financiamento-proprio/')} data-magnetic>Como funciona <Icone nome="seta" /></a>
+        <a class="btn btn--vidro" href={waLink('Olá! Quero simular o financiamento próprio de um lote.')} data-wa target="_blank" rel="noopener"><Icone nome="wa" /> Simular meu lote</a>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- COMERCIAL -->
+  <section class="capitulo" data-cena="comercial" aria-labelledby="c7">
+    <div class="wrap"><div class="texto" data-revelar>
+      <p class="sobre-titulo">Para o seu negócio</p>
+      <h2 id="c7"><span class="linha-mascara"><span>Espaço para</span></span><span class="linha-mascara"><span><em>crescer.</em></span></span></h2>
+      <p class="lead surge">Lojas, galpões e pontos comerciais em Marataízes — inclusive no Ed. Barra Shopping, em frente ao Supermercado Central de Compras.</p>
+      <div class="chips surge">{comerciais.map((t) => <a class="chip" href={u(`/tipo-de-imovel/${t.slug}/`)}>{t.name} <small class="num">{t.count}</small></a>)}</div>
+    </div></div>
+  </section>
+
+  <!-- SOBRE · linha do tempo -->
+  <section class="capitulo" data-cena="sobre1957" aria-labelledby="c8">
+    <div class="wrap"><div class="texto" data-revelar>
+      <p class="sobre-titulo">A nossa história</p>
+      <p class="ano num surge" id="c8">1957</p>
+      <p class="lead surge" style="color:var(--texto-claro)">Em 26 de dezembro de 1957, <b>Amilar de Menezes</b> fundou a A. Menezes com um sonho simples: ajudar as pessoas a conquistarem o seu imóvel.</p>
+    </div></div>
+  </section>
+  <section class="capitulo" data-cena="sobreLoteamentos" aria-labelledby="c9">
+    <div class="wrap"><div class="texto" data-revelar>
+      <p class="sobre-titulo">Os primeiros passos</p>
+      <h2 id="c9"><span class="linha-mascara"><span>Começamos</span></span><span class="linha-mascara"><span>pelos <em>loteamentos.</em></span></span></h2>
+      <p class="lead surge">Depois vieram a compra, a venda, a locação e a avaliação de imóveis — sempre em Marataízes, acompanhando cada ciclo de crescimento da cidade.</p>
+    </div></div>
+  </section>
+  <section class="capitulo" data-cena="sobreHoje" aria-labelledby="c10">
+    <div class="wrap"><div class="texto" data-revelar>
+      <p class="sobre-titulo">Hoje</p>
+      <h2 id="c10"><span class="linha-mascara"><span>A mesma família,</span></span><span class="linha-mascara"><span>o mesmo <em>compromisso.</em></span></span></h2>
+      <p class="lead surge">Sob a administração de {brand.gestor}, você fala com quem decide — sem intermediários, sem rodeios.</p>
+      <div class="acoes surge"><a class="link-seta" href={u('/sobre-nos/')}>Conheça a história completa</a></div>
+    </div></div>
+  </section>
+
+  <!-- PROVAS -->
+  <section class="secao secao--scrim" data-cena="provas" aria-labelledby="c11">
+    <div class="wrap" data-revelar>
+      <p class="sobre-titulo">Em números</p>
+      <h2 id="c11" style="max-width:16ch"><span class="linha-mascara"><span>Tradição que se</span></span><span class="linha-mascara"><span><em>comprova.</em></span></span></h2>
+      <div class="numeros surge">
+        <div class="numero"><b class="num" data-contar="1957" data-de="1900" data-ano>1957</b><span>ano de fundação</span></div>
+        <div class="numero"><b class="num" data-contar={imoveis.length}>{imoveis.length}</b><span>imóveis disponíveis agora</span></div>
+        <div class="numero"><b class="num" data-contar={nBairros}>{nBairros}</b><span>bairros com imóveis na carteira</span></div>
+        <div class="numero"><b class="num" data-contar="120" data-sufixo="x">120x</b><span>parcelas no financiamento próprio</span></div>
+      </div>
+      <!-- [PREENCHER: depoimentos reais de clientes, com autorização — a seção aparece quando houver conteúdo] -->
+    </div>
+  </section>
+
+  <!-- CAPTAÇÃO -->
+  <section class="capitulo" data-cena="captacao" aria-labelledby="c12">
+    <div class="wrap"><div class="texto" data-revelar>
+      <p class="sobre-titulo">Para proprietários</p>
+      <h2 id="c12"><span class="linha-mascara"><span>Entregue sua chave</span></span><span class="linha-mascara"><span>a quem cuida há <em class="num">{anos()} anos.</em></span></span></h2>
+      <p class="lead surge">Venda, aluguel anual ou temporada: a gente avalia, anuncia, mostra e administra o seu imóvel com o cuidado de uma empresa de família.</p>
+      <div class="acoes surge">
+        <a class="btn" href={u('/cadastre-seu-imovel/')} data-magnetic>Anunciar meu imóvel <Icone nome="chave" /></a>
+        <a class="btn btn--vidro" href={waLink('Olá! Tenho um imóvel em Marataízes e quero anunciar com a A. Menezes.')} data-wa target="_blank" rel="noopener"><Icone nome="wa" /> Falar sobre meu imóvel</a>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- CONTATO -->
+  <section class="secao secao--scrim" data-cena="contato" id="contato" aria-labelledby="c13">
+    <div class="wrap grade-2">
+      <div data-revelar>
+        <p class="sobre-titulo">Contato</p>
+        <h2 id="c13"><span class="linha-mascara"><span>Vamos encontrar</span></span><span class="linha-mascara"><span>o <em>seu?</em></span></span></h2>
+        <p class="lead surge">As luzes da orla são casas, histórias e famílias. A próxima pode ser a sua.</p>
+        <ul class="surge" style="list-style:none;padding:0;margin:1.6rem 0 0;display:grid;gap:12px">
+          <li><a class="link-seta" href={waLink('Olá! Vim pelo site da A. Menezes.')} data-wa target="_blank" rel="noopener">WhatsApp {brand.contato.whatsappLabel}</a></li>
+          <li><a href={`tel:+${brand.contato.telefone}`}>Telefone {brand.contato.telefoneLabel}</a></li>
+          <li><a href={`mailto:${brand.contato.email}`}>{brand.contato.email}</a></li>
+          <li style="color:var(--texto-claro-2)">{brand.contato.endereco.rua} · {brand.contato.endereco.cidade} – ES</li>
+        </ul>
+      </div>
+      <div class="painel" data-revelar><LeadForm /></div>
+    </div>
+  </section>
+</Base>

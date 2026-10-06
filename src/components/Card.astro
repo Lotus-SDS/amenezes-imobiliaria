@@ -1,0 +1,27 @@
+---
+import { u } from '../lib/url';
+import { type Imovel, tipoDe, precoPrincipal, local, specs, tituloBonito, temFinanciamento, FINALIDADES, altFoto } from '../lib/imoveis';
+interface Props { i: Imovel; eager?: boolean; prioridade?: boolean }
+const { i, eager = false, prioridade = false } = Astro.props;
+const preco = precoPrincipal(i);
+const sp = specs(i).slice(0, 3);
+---
+<a class="card" href={u(i.url)}>
+  <div class="card-foto">
+    {i.capa && (
+      <img src={i.capa.src} srcset={i.capa.srcset} sizes="(max-width: 700px) 92vw, (max-width: 1100px) 45vw, 400px"
+        width={i.capa.w} height={i.capa.h} alt={i.capa.alt || altFoto(i)} loading={eager ? 'eager' : 'lazy'} fetchpriority={prioridade ? 'high' : undefined} decoding="async" />
+    )}
+    <span class={`selo selo--${i.finalidade}`}>{FINALIDADES[i.finalidade].rotulo}</span>
+    {temFinanciamento(i) && <span class="selo selo--fin">Até 120x</span>}
+  </div>
+  <div class="card-corpo">
+    <span class="card-local">{tipoDe(i)} · {local(i)}</span>
+    <h3>{tituloBonito(i)}</h3>
+    {sp.length > 0 && <div class="card-specs">{sp.map((s) => <span>{s}</span>)}</div>}
+    <div class="card-preco">
+      <strong class="num">{preco.valor}<small>{preco.sufixo && ` ${preco.sufixo}`}</small></strong>
+      {i.codigo && <span class="card-cod">Cód. {i.codigo}</span>}
+    </div>
+  </div>
+</a>

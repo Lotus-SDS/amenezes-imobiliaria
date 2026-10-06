@@ -1,0 +1,26 @@
+---
+// Mantém as URLs atuais: /tipo-de-negocio/venda/, /alugar/, /aluguel_temporada/
+import Base from '../../layouts/Base.astro';
+import Faixa from '../../components/Faixa.astro';
+import Listagem from '../../components/Listagem.astro';
+import { imoveis, FINALIDADES, type Finalidade } from '../../lib/imoveis';
+import { waLink } from '../../../brand.config';
+
+export function getStaticPaths() {
+  const mapa: Record<string, Finalidade> = { venda: 'venda', alugar: 'anual', aluguel_temporada: 'temporada' };
+  return Object.entries(mapa).map(([slug, f]) => ({ params: { slug }, props: { f } }));
+}
+const { f } = Astro.props as { f: Finalidade };
+const lista = imoveis.filter((i) => i.finalidade === f);
+const textos = {
+  venda: { t: 'Imóveis à venda em Marataízes', h: 'Imóveis <em>à venda</em>', lead: `${lista.length} casas, apartamentos, lotes e pontos comerciais à venda. Lotes com financiamento próprio em até 120x.`, wa: 'Olá! Quero comprar um imóvel em Marataízes.' },
+  anual: { t: 'Imóveis para alugar em Marataízes (aluguel anual)', h: 'Para <em>alugar</em> o ano todo', lead: `${lista.length} imóveis para aluguel anual, com valor do aluguel e IPTU em cada anúncio.`, wa: 'Olá! Procuro um imóvel para alugar (anual) em Marataízes.' },
+  temporada: { t: 'Aluguel de temporada em Marataízes', h: 'Temporada no <em>litoral</em>', lead: `${lista.length} casas e apartamentos para o verão, com reserva online: escolha as datas e veja o total na hora.`, wa: 'Olá! Quero alugar um imóvel para a temporada em Marataízes.' },
+}[f];
+---
+<Base titulo={textos.t} descricao={`${textos.lead} A. Menezes Imobiliária, desde 1957 em Marataízes – ES.`} waTexto={textos.wa}>
+  <Faixa cena={FINALIDADES[f].cena} sobre={FINALIDADES[f].nome} titulo={textos.t} tituloHtml={textos.h} lead={textos.lead} migalhas={[{ href: '/imoveis/', nome: 'Imóveis' }, { nome: FINALIDADES[f].rotulo }]}>
+    <div class="acoes-faixa"><a class="btn btn--wa" href={waLink(textos.wa)} data-wa target="_blank" rel="noopener">Falar com um corretor</a></div>
+  </Faixa>
+  <section class="claro secao secao--lista"><div class="wrap"><Listagem lista={lista} fixo={{ finalidade: f }} /></div></section>
+</Base>

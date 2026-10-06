@@ -1,0 +1,48 @@
+---
+import Base from '../layouts/Base.astro';
+import Faixa from '../components/Faixa.astro';
+import LeadForm from '../components/LeadForm.astro';
+import Icone from '../components/Icone.astro';
+import { brand, waLink } from '../../brand.config';
+const c = brand.contato;
+const { lat, lng } = c.endereco.geo;
+---
+<Base titulo="Contato" descricao={`Fale com a A. Menezes Imobiliária: WhatsApp ${c.whatsappLabel}, telefone ${c.telefoneLabel}, ${c.email}. ${c.endereco.rua}, ${c.endereco.cidade} – ES.`}>
+  <Faixa cena="interna-noite" sobre="Contato" titulo="Fale com a gente" tituloHtml="Fale com <em>a gente</em>" lead="Resposta rápida pelo WhatsApp, com atendimento direto de Sérgio Menezes." migalhas={[{ nome: 'Contato' }]}>
+    <div class="acoes-faixa"><a class="btn btn--wa" href={waLink('Olá! Vim pelo site da A. Menezes.')} data-wa target="_blank" rel="noopener" data-magnetic><Icone nome="wa" /> Chamar no WhatsApp</a></div>
+  </Faixa>
+  <section class="claro secao">
+    <div class="wrap grade-2" style="align-items:start">
+      <div data-revelar>
+        <ul class="contatos">
+          <li><Icone nome="wa" /><div><span>WhatsApp</span><a href={waLink('Olá! Vim pelo site da A. Menezes.')} data-wa target="_blank" rel="noopener">{c.whatsappLabel}</a></div></li>
+          <li><Icone nome="tel" /><div><span>Telefone</span><a href={`tel:+${c.telefone}`}>{c.telefoneLabel}</a></div></li>
+          <li><Icone nome="mail" /><div><span>E-mail</span><a href={`mailto:${c.email}`}>{c.email}</a></div></li>
+          <li><Icone nome="pin" /><div><span>Endereço</span><p>{c.endereco.rua}<br />{c.endereco.cidade} – {c.endereco.uf} · CEP {c.endereco.cep}</p></div></li>
+          <li><Icone nome="cal" /><div><span>Horário</span><p>{c.horario}</p></div></li>
+          <li><Icone nome="insta" /><div><span>Redes sociais</span><p><a href={c.instagram} target="_blank" rel="noopener">Instagram</a> · <a href={c.facebook} target="_blank" rel="noopener">Facebook</a></p></div></li>
+        </ul>
+        <div class="mapa" style="margin-top:28px" data-mapa={`https://maps.google.com/maps?q=${lat},${lng}&z=17&output=embed`}>
+          <button type="button" class="btn btn--azul"><Icone nome="pin" /> Ver a sede no mapa</button>
+          <p>Ed. Barra Shopping, em frente ao Supermercado Central de Compras</p>
+        </div>
+      </div>
+      <div class="painel" data-revelar><LeadForm titulo="Envie uma mensagem" /></div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .contatos { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; }
+  .contatos li { display: flex; gap: 16px; align-items: flex-start; }
+  .contatos svg { width: 26px; height: 26px; color: var(--azul); flex: none; margin-top: 4px; }
+  .contatos span { display: block; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--texto-escuro-2); }
+  .contatos a, .contatos p { font-size: 1.15rem; margin: 0; text-decoration: none; }
+</style>
+<script>
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll<HTMLElement>('[data-mapa]').forEach((m) => m.querySelector('button')?.addEventListener('click', () => {
+      m.innerHTML = `<iframe src="${m.dataset.mapa}" title="Localização da A. Menezes" loading="lazy"></iframe>`;
+    }, { once: true }));
+  });
+</script>

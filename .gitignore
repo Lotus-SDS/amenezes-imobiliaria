@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+.claude/
+
+# Documentos internos de venda/diagnóstico: ficam só no computador (não vão para o GitHub)
+BRIEFING.md
+CONCEITOS.md
+APRESENTACAO.md
+PENDENCIAS.md

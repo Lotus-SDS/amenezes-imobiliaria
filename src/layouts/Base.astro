@@ -1,0 +1,195 @@
+---
+import { u } from '../lib/url';
+// Layout base: SEO, dados estruturados, canvas persistente entre rotas, cabeçalho, rodapé,
+// WhatsApp fixo, banner LGPD e carregamento tardio da experiência 3D.
+import { ClientRouter } from 'astro:transitions';
+import '@fontsource-variable/fraunces/opsz.css';
+import '@fontsource-variable/fraunces/opsz-italic.css';
+import '@fontsource-variable/outfit/index.css';
+import '../styles/global.css';
+import '../styles/paginas.css';
+import { brand, waLink, anos } from '../../brand.config';
+import Icone from '../components/Icone.astro';
+
+interface Props {
+  titulo: string;
+  descricao: string;
+  imagem?: string;
+  cena?: string;
+  schema?: object[];
+  waTexto?: string;
+  ogTipo?: string;
+}
+const { titulo, descricao, imagem = '/img/og-padrao.jpg', cena = 'interna', schema = [], waTexto = 'Olá! Vim pelo site da A. Menezes e gostaria de atendimento.', ogTipo = 'website' } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const tituloCompleto = titulo.includes('A. Menezes') ? titulo : `${titulo} · A. Menezes Imobiliária`;
+const ogImg = new URL(u(imagem), Astro.site).href;
+const c = brand.contato;
+const atual = Astro.url.pathname;
+const nav = [
+  { href: '/tipo-de-negocio/venda/', nome: 'Comprar' },
+  { href: '/tipo-de-negocio/alugar/', nome: 'Alugar' },
+  { href: '/tipo-de-negocio/aluguel_temporada/', nome: 'Temporada' },
+  { href: '/financiamento-proprio/', nome: 'Financiamento' },
+  { href: '/sobre-nos/', nome: 'A Empresa' },
+  { href: '/contato/', nome: 'Contato' },
+];
+
+const org = {
+  '@context': 'https://schema.org',
+  '@type': 'RealEstateAgent',
+  '@id': `${brand.site}/#imobiliaria`,
+  name: brand.nome,
+  legalName: brand.razaoSocial,
+  url: brand.site,
+  logo: new URL(u('/img/logo-amenezes.png'), Astro.site).href,
+  image: ogImg,
+  foundingDate: brand.fundacao,
+  founder: { '@type': 'Person', name: brand.fundador },
+  telephone: `+${c.telefone}`,
+  email: c.email,
+  address: { '@type': 'PostalAddress', streetAddress: c.endereco.rua, addressLocality: c.endereco.cidade, addressRegion: c.endereco.uf, postalCode: c.endereco.cep, addressCountry: 'BR' },
+  geo: { '@type': 'GeoCoordinates', latitude: c.endereco.geo.lat, longitude: c.endereco.geo.lng },
+  areaServed: ['Marataízes', 'Itapemirim', 'Itaipava', 'Presidente Kennedy'],
+  sameAs: [c.instagram, c.facebook],
+};
+const cssVars = `:root{--amarelo:${brand.cores.amarelo};--azul:${brand.cores.azul};--noite:${brand.cores.noite};--noite2:${brand.cores.noite2};--tinta:${brand.cores.tinta};--areia:${brand.cores.areia};--areia2:${brand.cores.areia2};--linha:${brand.cores.linha};--fonte-display:${brand.fontes.display};--fonte-texto:${brand.fontes.texto}}`;
+---
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{tituloCompleto}</title>
+  <meta name="description" content={descricao} />
+  <link rel="canonical" href={canonical} />
+  <meta name="theme-color" content={brand.cores.noite} />
+  <link rel="icon" href={u('/favicon.svg')} type="image/svg+xml" />
+  <!-- fotos dos imóveis vêm do WordPress -->
+  <link rel="preconnect" href="https://amenezes.com.br" crossorigin />
+  <link rel="dns-prefetch" href="https://amenezes.com.br" />
+  <meta property="og:type" content={ogTipo} />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:site_name" content={brand.nome} />
+  <meta property="og:title" content={tituloCompleto} />
+  <meta property="og:description" content={descricao} />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:image" content={ogImg} />
+  <meta name="twitter:card" content="summary_large_image" />
+  <style is:inline set:html={cssVars}></style>
+  <script is:inline>document.documentElement.classList.add('js')</script>
+  <script type="application/ld+json" set:html={JSON.stringify([org, ...schema])} />
+  <ClientRouter fallback="swap" />
+</head>
+<body data-cena-pagina={cena}>
+  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+  <!-- Camada visual: persiste entre páginas (o 3D não recarrega ao navegar) -->
+  <div class="poster" transition:persist="poster" aria-hidden="true"></div>
+  <canvas id="cena" transition:persist="cena" aria-hidden="true"></canvas>
+  <div class="grao" aria-hidden="true"></div>
+
+  <header class="topo" transition:persist="topo">
+    <div class="wrap">
+      <a class="marca" href={u('/')} aria-label={`${brand.nome} — início`}>
+        <img src={u('/img/logo-amenezes.png')} width="237" height="93" alt="A. Menezes Imobiliária" />
+        <small>Desde 1957<br />Marataízes · ES</small>
+      </a>
+      <nav class="nav" aria-label="Principal">
+        {nav.map((n) => <a href={u(n.href)} aria-current={atual.startsWith(u(n.href)) ? 'page' : undefined}>{n.nome}</a>)}
+      </nav>
+      <div class="topo-acoes">
+        <a class="btn btn--vidro btn--sm" href={u('/cadastre-seu-imovel/')}>Anunciar imóvel</a>
+        <a class="btn btn--sm" href={waLink(waTexto)} data-wa data-magnetic target="_blank" rel="noopener"><Icone nome="wa" /> <span>WhatsApp</span></a>
+        <button class="menu-btn" type="button" aria-expanded="false" aria-controls="gaveta" aria-label="Abrir menu"><span></span></button>
+      </div>
+    </div>
+  </header>
+  <nav id="gaveta" class="gaveta" aria-label="Menu" transition:persist="gaveta">
+    <a href={u('/imoveis/')}>Todos os imóveis</a>
+    {nav.map((n) => <a href={u(n.href)}>{n.nome}</a>)}
+    <a href={u('/cadastre-seu-imovel/')}>Anunciar meu imóvel</a>
+    <p class="gaveta-contato">WhatsApp {c.whatsappLabel} · {c.email}</p>
+  </nav>
+
+  <main id="conteudo">
+    <slot />
+  </main>
+
+  <footer class="rodape">
+    <div class="wrap">
+      <div class="grade">
+        <div>
+          <img src={u('/img/logo-amenezes.png')} width="160" height="63" alt="A. Menezes Imobiliária" loading="lazy" />
+          <p class="frase">Há {anos()} anos acendendo luzes na orla.</p>
+          <form class="form news" data-lead="newsletter" method="post" action={u('/obrigado/')}>
+            <label for="news-email">Receba imóveis novos e oportunidades por e-mail</label>
+            <div class="news-linha">
+              <input id="news-email" name="email" type="email" autocomplete="email" placeholder="seu@email.com" required />
+              <button class="btn btn--sm" type="submit">Cadastrar</button>
+            </div>
+            <input class="mel" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+            <label class="consent"><input type="checkbox" name="consentimento" required /> <span>Aceito receber e-mails da A. Menezes (cancele quando quiser).</span></label>
+            <div class="form-ok" tabindex="-1" role="status"><strong>Pronto! Você vai receber as novidades.</strong></div>
+          </form>
+        </div>
+        <div>
+          <h2>Atendimento</h2>
+          <ul>
+            <li><a href={waLink(waTexto)} data-wa target="_blank" rel="noopener">WhatsApp {c.whatsappLabel}</a></li>
+            <li><a href={`tel:+${c.telefone}`}>Telefone {c.telefoneLabel}</a></li>
+            <li><a href={`mailto:${c.email}`}>{c.email}</a></li>
+            <li>{c.endereco.rua}<br />{c.endereco.cidade} – {c.endereco.uf}, CEP {c.endereco.cep}</li>
+          </ul>
+        </div>
+        <div>
+          <h2>Imóveis</h2>
+          <ul>
+            <li><a href={u('/tipo-de-negocio/venda/')}>Comprar</a></li>
+            <li><a href={u('/tipo-de-negocio/alugar/')}>Alugar (anual)</a></li>
+            <li><a href={u('/tipo-de-negocio/aluguel_temporada/')}>Temporada</a></li>
+            <li><a href={u('/financiamento-proprio/')}>Lotes com financiamento próprio</a></li>
+            <li><a href={u('/cadastre-seu-imovel/')}>Anunciar meu imóvel</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Institucional</h2>
+          <ul>
+            <li><a href={u('/sobre-nos/')}>A Empresa</a></li>
+            <li><a href={u('/contato/')}>Contato</a></li>
+            <li><a href={u('/politica-de-privacidade/')}>Política de privacidade</a></li>
+            <li><a href={c.instagram} target="_blank" rel="noopener">Instagram</a></li>
+            <li><a href={c.facebook} target="_blank" rel="noopener">Facebook</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="assinatura">
+        <span>© {new Date().getFullYear()} {brand.razaoSocial}</span>
+        <span>Imóveis em Marataízes para comprar, alugar e temporada · Administração {brand.gestor}</span>
+      </div>
+    </div>
+  </footer>
+
+  <a class="wa-flutuante" href={waLink(waTexto)} data-wa target="_blank" rel="noopener" aria-label="Falar no WhatsApp"><Icone nome="wa" /> Fale com a gente</a>
+  <div class="barra-movel">
+    <a class="btn btn--vidro" href={u('/imoveis/')}><Icone nome="busca" /> Imóveis</a>
+    <a class="btn btn--wa" href={waLink(waTexto)} data-wa target="_blank" rel="noopener"><Icone nome="wa" /> WhatsApp</a>
+  </div>
+
+  <button class="som" type="button" aria-pressed="false" transition:persist="som"><i><b></b><b></b><b></b></i> Som do mar</button>
+  <div class="cursor" aria-hidden="true" transition:persist="cursor"></div>
+
+  <div class="cookies" role="dialog" aria-live="polite" aria-label="Privacidade e cookies" hidden transition:persist="cookies">
+    <p>Usamos cookies essenciais para o site funcionar. Com a sua permissão, também usamos cookies de medição (Google e Meta) para melhorar o atendimento. <a href={u('/politica-de-privacidade/')}>Saiba mais</a>.</p>
+    <div class="acoes">
+      <button class="btn btn--sm" type="button" data-cookies="aceitar">Aceitar</button>
+      <button class="btn btn--vidro btn--sm" type="button" data-cookies="recusar">Só essenciais</button>
+    </div>
+  </div>
+
+  <script>
+    import { iniciarUI } from '../scripts/ui';
+    iniciarUI();
+  </script>
+</body>
+</html>

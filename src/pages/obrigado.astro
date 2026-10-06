@@ -1,0 +1,11 @@
+---
+import { u } from '../lib/url';
+import Base from '../layouts/Base.astro';
+import Faixa from '../components/Faixa.astro';
+import { waLink } from '../../brand.config';
+---
+<Base titulo="Mensagem recebida" descricao="Recebemos sua mensagem. A. Menezes Imobiliária.">
+  <Faixa cena="interna-noite" sobre="Obrigado" titulo="Recebemos sua mensagem" tituloHtml="Uma luz nova <em>acendeu</em>" lead="Recebemos seu contato e respondemos pelo WhatsApp em horário comercial.">
+    <div class="acoes-faixa"><a class="btn" href={u('/imoveis/')}>Ver imóveis</a><a class="btn btn--wa" href={waLink('Olá! Acabei de enviar uma mensagem pelo site.')} data-wa target="_blank" rel="noopener">Chamar agora no WhatsApp</a></div>
+  </Faixa>
+</Base>

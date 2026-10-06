@@ -1,0 +1,125 @@
+---
+// Listagem com filtros no cliente. Todos os cards vêm no HTML (SEO e funciona sem JS);
+// o script só esconde/mostra conforme os filtros. ponytail: filtro em memória — basta até alguns milhares de imóveis.
+import Card from './Card.astro';
+import { type Imovel, FINALIDADES, tituloBonito } from '../lib/imoveis';
+
+interface Props { lista: Imovel[]; fixo?: { finalidade?: string; tipo?: string } }
+const { lista, fixo = {} } = Astro.props;
+const conta = (k: (i: Imovel) => string) => Object.entries(lista.reduce((a: Record<string, number>, i) => { const v = k(i); if (v) a[v] = (a[v] || 0) + 1; return a; }, {})).sort((a, b) => b[1] - a[1]);
+const tipos = conta((i) => i.tipo);
+const bairros = conta((i) => i.bairro);
+const ordenada = [...lista].sort((a, b) => b.modificado.localeCompare(a.modificado));
+// Só os primeiros vão para o DOM; o resto fica num <template> inerte até o visitante filtrar ou chegar ao fim
+const INICIAIS = 24;
+const primeiros = ordenada.slice(0, INICIAIS), resto = ordenada.slice(INICIAIS);
+const preco = (i: Imovel) => (i.finalidade === 'venda' ? i.preco : i.finalidade === 'anual' ? i.aluguel : null) || '';
+---
+<div class="filtros" data-filtros>
+  <label class="filtro-busca"><span class="sr-only">Buscar</span>
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <input type="search" name="q" placeholder="Código, bairro, rua…" autocomplete="off" />
+  </label>
+  {!fixo.finalidade && (
+    <label><span class="sr-only">Finalidade</span>
+      <select name="f"><option value="">Comprar, alugar ou temporada</option>{Object.entries(FINALIDADES).map(([k, v]) => <option value={k}>{v.rotulo}</option>)}</select>
+    </label>
+  )}
+  {!fixo.tipo && tipos.length > 1 && (
+    <label><span class="sr-only">Tipo</span>
+      <select name="tp"><option value="">Todos os tipos</option>{tipos.map(([t, n]) => <option value={t}>{t} ({n})</option>)}</select>
+    </label>
+  )}
+  {bairros.length > 1 && (
+    <label><span class="sr-only">Bairro</span>
+      <select name="b"><option value="">Todos os bairros</option>{bairros.map(([b, n]) => <option value={b}>{b} ({n})</option>)}</select>
+    </label>
+  )}
+  <label><span class="sr-only">Quartos</span>
+    <select name="qt"><option value="">Quartos</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option></select>
+  </label>
+  <label><span class="sr-only">Ordenar</span>
+    <select name="o"><option value="recentes">Mais recentes</option><option value="menor">Menor preço</option><option value="maior">Maior preço</option></select>
+  </label>
+  <p class="filtro-total" aria-live="polite"><b class="num" data-total>{lista.length}</b> imóveis</p>
+</div>
+
+<h2 class="sr-only">Imóveis encontrados</h2>
+<div class="cards" data-lista>
+  {primeiros.map((i, k) => (
+    <div class="item" data-f={i.finalidade} data-tp={i.tipo} data-b={i.bairro} data-q={i.quartos || 0} data-p={preco(i)} data-m={i.modificado}
+      data-txt={`${i.codigo} ${tituloBonito(i)} ${i.titulo} ${i.bairro} ${i.endereco} ${i.tipo}`.toLowerCase()}>
+      <Card i={i} eager={k < 3} prioridade={k === 0} />
+    </div>
+  ))}
+</div>
+{resto.length > 0 && (
+  <template data-resto>
+    {resto.map((i) => (
+      <div class="item" data-f={i.finalidade} data-tp={i.tipo} data-b={i.bairro} data-q={i.quartos || 0} data-p={preco(i)} data-m={i.modificado}
+        data-txt={`${i.codigo} ${tituloBonito(i)} ${i.titulo} ${i.bairro} ${i.endereco} ${i.tipo}`.toLowerCase()}>
+        <Card i={i} />
+      </div>
+    ))}
+  </template>
+)}
+<div class="vazio" data-vazio hidden>
+  <p class="lead">Nenhum imóvel com esses filtros agora — mas a carteira muda toda semana.</p>
+  <a class="btn btn--azul" href="https://wa.me/5528999251334?text=Ol%C3%A1!%20N%C3%A3o%20achei%20o%20im%C3%B3vel%20que%20procuro%20no%20site.%20Podem%20me%20ajudar%3F" target="_blank" rel="noopener" data-wa>Me avise quando chegar</a>
+</div>
+
+<script>
+  // Filtros: lê/escreve na URL (?q=&f=&tp=&b=&qt=&o=) para o link poder ser compartilhado
+  function montar() {
+    const box = document.querySelector<HTMLElement>('[data-filtros]');
+    const lista = document.querySelector<HTMLElement>('[data-lista]');
+    if (!box || !lista || box.dataset.ok) return;
+    box.dataset.ok = '1';
+    let itens = [...lista.querySelectorAll<HTMLElement>('.item')];
+    const tpl = document.querySelector<HTMLTemplateElement>('template[data-resto]');
+    const carregarResto = () => {
+      if (!tpl || tpl.dataset.ok) return;
+      tpl.dataset.ok = '1';
+      lista.append(tpl.content);
+      itens = [...lista.querySelectorAll<HTMLElement>('.item')];
+    };
+    // chegou perto do fim da lista inicial → traz o resto
+    const ultimo = itens[itens.length - 1];
+    if (tpl && ultimo) {
+      const io = new IntersectionObserver(([en]) => { if (en.isIntersecting) { io.disconnect(); carregarResto(); } }, { rootMargin: '600px' });
+      io.observe(ultimo);
+    }
+    const campos = [...box.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input,select')];
+    const total = box.querySelector('[data-total]')!;
+    const vazio = document.querySelector<HTMLElement>('[data-vazio]')!;
+    const url = new URL(location.href);
+    campos.forEach((c) => { const v = url.searchParams.get(c.name); if (v) c.value = v; });
+    const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+    const padrao = (c: HTMLInputElement | HTMLSelectElement) => !c.value || ('options' in c && c.value === c.options[0].value);
+    const aplicar = () => {
+      if (campos.some((c) => !padrao(c))) carregarResto();
+      const v = Object.fromEntries(campos.map((c) => [c.name, c.value]));
+      const q = norm(v.q || '').trim();
+      let n = 0;
+      for (const it of itens) {
+        const d = it.dataset;
+        const ok = (!q || norm(d.txt!).includes(q))
+          && (!v.f || d.f === v.f) && (!v.tp || d.tp === v.tp) && (!v.b || d.b === v.b)
+          && (!v.qt || Number(d.q) >= Number(v.qt));
+        it.hidden = !ok;
+        if (ok) n++;
+      }
+      const ord = v.o || 'recentes';
+      const chave = (it: HTMLElement) => ord === 'recentes' ? it.dataset.m! : Number(it.dataset.p || (ord === 'menor' ? 1e12 : 0));
+      itens.sort((a, b) => { const x = chave(a), y = chave(b); return ord === 'menor' ? (x > y ? 1 : -1) : (x < y ? 1 : -1); }).forEach((it) => lista.append(it));
+      vazio.hidden = n > 0;
+      if (!tpl || tpl.dataset.ok) total.textContent = String(n);
+      campos.forEach((c) => (padrao(c) ? url.searchParams.delete(c.name) : url.searchParams.set(c.name, c.value)));
+      history.replaceState(history.state, '', url);
+    };
+    campos.forEach((c) => c.addEventListener(c.tagName === 'INPUT' ? 'input' : 'change', aplicar));
+    aplicar();
+  }
+  document.addEventListener('astro:page-load', montar);
+</script>

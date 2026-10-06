@@ -1,0 +1,13 @@
+---
+import { u } from '../lib/url';
+import Base from '../layouts/Base.astro';
+import Faixa from '../components/Faixa.astro';
+---
+<Base titulo="Página não encontrada" descricao="Esta página não existe mais. Busque imóveis por código, bairro ou tipo.">
+  <Faixa cena="interna-noite" sobre="Erro 404" titulo="Página não encontrada" tituloHtml="Esta luz <em>apagou</em>" lead="O imóvel pode ter sido vendido ou alugado. Busque pelo código ou veja o que acabou de chegar.">
+    <form class="busca-codigo" data-busca role="search" action={u('/imoveis/')} style="margin-top:1.6rem">
+      <label><span class="sr-only">Buscar</span><input name="q" placeholder="Código, bairro ou tipo" /></label>
+      <button class="btn" type="submit">Buscar</button>
+    </form>
+  </Faixa>
+</Base>

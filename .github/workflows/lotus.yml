@@ -1,0 +1,71 @@
+# Workflow padrão de um site filho do Lotus_site.
+# Copie para .github/workflows/lotus.yml no repositório do site.
+#
+#   push na main    valida o build e avisa o Lotus_site, que atualiza o submodule
+#                   na main dele e publica. Vale para push direto e para merge de PR.
+#   PR (opcional)   valida o build antes do merge
+#
+# O aviso precisa do secret LOTUS_BOT_TOKEN neste repositório. Sem ele, o
+# Lotus_site encontra a versão nova na verificação diária.
+name: Lotus
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  PARENT_REPO: Lotus-SDS/Lotus_site
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - if: hashFiles('package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Lint e build (npm)
+        if: hashFiles('package.json') != ''
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          npm run lint --if-present
+          npm run build --if-present
+
+      - name: Build da imagem (Dockerfile próprio)
+        if: hashFiles('Dockerfile') != ''
+        run: docker build .
+
+      - name: Site estático
+        if: hashFiles('package.json') == '' && hashFiles('Dockerfile') == ''
+        run: |
+          test -f index.html || {
+            echo "::error::Sem package.json, Dockerfile nem index.html: o Lotus_site não sabe publicar este repositório."
+            exit 1
+          }
+
+  notify-parent:
+    name: Avisar Lotus_site
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.LOTUS_BOT_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::notice::Sem LOTUS_BOT_TOKEN: o Lotus_site pega esta versão na verificação diária."
+            exit 0
+          fi
+          gh api "repos/$PARENT_REPO/dispatches" \
+            -f event_type=site-updated \
+            -f "client_payload[repo]=$GITHUB_REPOSITORY"
+          echo "Lotus_site avisado: a versão nova entra no ar em alguns minutos."

@@ -1,0 +1,182 @@
+{
+  "tipos": [
+    {
+      "name": "Casa",
+      "slug": "casa",
+      "count": 80
+    },
+    {
+      "name": "Apartamento",
+      "slug": "apartamento",
+      "count": 106
+    },
+    {
+      "name": "Lote",
+      "slug": "lote",
+      "count": 60
+    },
+    {
+      "name": "Loja",
+      "slug": "loja",
+      "count": 29
+    },
+    {
+      "name": "Duplex",
+      "slug": "duplex",
+      "count": 9
+    },
+    {
+      "name": "Ponto comercial",
+      "slug": "ponto-comercial",
+      "count": 8
+    },
+    {
+      "name": "Área comercial",
+      "slug": "area-comercial",
+      "count": 2
+    },
+    {
+      "name": "Galpão",
+      "slug": "galpao",
+      "count": 7
+    },
+    {
+      "name": "Área",
+      "slug": "area",
+      "count": 1
+    },
+    {
+      "name": "Garagem",
+      "slug": "garagem",
+      "count": 1
+    }
+  ],
+  "bairros": [
+    {
+      "name": "Areias Negras",
+      "count": 107
+    },
+    {
+      "name": "Belo Horizonte",
+      "count": 33
+    },
+    {
+      "name": "Cidade Nova",
+      "count": 19
+    },
+    {
+      "name": "Arraias",
+      "count": 15
+    },
+    {
+      "name": "Marobá",
+      "count": 14
+    },
+    {
+      "name": "Centro",
+      "count": 11
+    },
+    {
+      "name": "Barra do Itapemirim",
+      "count": 8
+    },
+    {
+      "name": "Ilmenita",
+      "count": 6
+    },
+    {
+      "name": "Praia dos Cações",
+      "count": 5
+    },
+    {
+      "name": "Santa Helena",
+      "count": 5
+    },
+    {
+      "name": "Esplanada",
+      "count": 4
+    },
+    {
+      "name": "Vila de Itapemirim",
+      "count": 3
+    },
+    {
+      "name": "Santa Rita",
+      "count": 3
+    },
+    {
+      "name": "Novo Horizonte",
+      "count": 3
+    },
+    {
+      "name": "Maraguá",
+      "count": 3
+    },
+    {
+      "name": "Recreio Atlântico",
+      "count": 3
+    },
+    {
+      "name": "Baixa Bonita",
+      "count": 2
+    },
+    {
+      "name": "Candinha III",
+      "count": 2
+    },
+    {
+      "name": "Santa Tereza",
+      "count": 2
+    },
+    {
+      "name": "Itaipava",
+      "count": 2
+    },
+    {
+      "name": "Elza",
+      "count": 2
+    },
+    {
+      "name": "Lagoa Dantas",
+      "count": 2
+    },
+    {
+      "name": "Barra",
+      "count": 2
+    },
+    {
+      "name": "Acapulco",
+      "count": 2
+    },
+    {
+      "name": "Ponta Do Siri",
+      "count": 1
+    },
+    {
+      "name": "Lagoa Do Siri",
+      "count": 1
+    },
+    {
+      "name": "Itapemirim",
+      "count": 1
+    },
+    {
+      "name": "Lurdes",
+      "count": 1
+    }
+  ],
+  "finalidades": [
+    {
+      "slug": "venda",
+      "count": 144
+    },
+    {
+      "slug": "anual",
+      "count": 107
+    },
+    {
+      "slug": "temporada",
+      "count": 50
+    }
+  ]
+}

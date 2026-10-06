@@ -1,0 +1,22 @@
+---
+// Mantém as URLs atuais: /tipo-de-imovel/casa/, /apartamento/, /lote/…
+import Base from '../../layouts/Base.astro';
+import Faixa from '../../components/Faixa.astro';
+import Listagem from '../../components/Listagem.astro';
+import { imoveis, taxonomias } from '../../lib/imoveis';
+
+export function getStaticPaths() {
+  return taxonomias.tipos.map((t) => ({ params: { slug: t.slug }, props: { nome: t.name } }));
+}
+const { nome } = Astro.props as { nome: string };
+const lista = imoveis.filter((i) => i.tipoSlug === Astro.params.slug);
+const plural: Record<string, string> = { Casa: 'Casas', Apartamento: 'Apartamentos', Lote: 'Lotes', Loja: 'Lojas', Duplex: 'Duplex', Galpão: 'Galpões', 'Ponto comercial': 'Pontos comerciais', 'Área comercial': 'Áreas comerciais', Área: 'Áreas', Garagem: 'Garagens' };
+const titulo = `${plural[nome] || nome} em Marataízes`;
+const lead = Astro.params.slug === 'lote'
+  ? `${lista.length} lotes para construir a casa dos seus planos — vários com financiamento próprio em até 120x, direto com a imobiliária.`
+  : `${lista.length} ${(plural[nome] || nome).toLowerCase()} para comprar, alugar ou passar a temporada em Marataízes e região.`;
+---
+<Base titulo={titulo} descricao={`${lead} A. Menezes Imobiliária, desde 1957.`}>
+  <Faixa cena={Astro.params.slug === 'lote' ? 'interna-venda' : 'interna'} sobre="Tipo de imóvel" titulo={titulo} tituloHtml={`${plural[nome] || nome} em <em>Marataízes</em>`} lead={lead} migalhas={[{ href: '/imoveis/', nome: 'Imóveis' }, { nome: plural[nome] || nome }]} />
+  <section class="claro secao secao--lista"><div class="wrap"><Listagem lista={lista} fixo={{ tipo: nome }} /></div></section>
+</Base>

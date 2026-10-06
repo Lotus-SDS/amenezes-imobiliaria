@@ -1,0 +1,75 @@
+---
+import { u } from '../lib/url';
+// Captação: mantém todos os campos do formulário original, organizados em blocos
+import Base from '../layouts/Base.astro';
+import Faixa from '../components/Faixa.astro';
+import Icone from '../components/Icone.astro';
+import { waLink, anos } from '../../brand.config';
+const tipos = ['Casa', 'Apartamento', 'Chácara', 'Duplex', 'Cobertura', 'Lote', 'Loteamento', 'Loja', 'Sala comercial', 'Sítio', 'Fazenda', 'Kitnet'];
+---
+<Base titulo="Cadastre seu imóvel" descricao={`Quer vender ou alugar seu imóvel em Marataízes? Cadastre na A. Menezes: avaliação, anúncio, visitas e administração com ${anos()} anos de experiência.`}>
+  <Faixa cena="captacao" sobre="Para proprietários" titulo="Cadastre seu imóvel" tituloHtml="Entregue sua chave a quem <em>cuida</em>" lead="Preencha os dados abaixo e um corretor entra em contato para conhecer o imóvel. Leva uns 3 minutos." migalhas={[{ nome: 'Cadastre seu imóvel' }]} />
+  <section class="claro secao">
+    <div class="wrap grade-2" style="align-items:start">
+      <form class="form painel" data-lead="captacao" method="post" action={u('/obrigado/')} data-revelar>
+        <fieldset class="bloco"><legend>1. Seus dados</legend>
+          <div class="duas">
+            <div class="campo"><label for="cp-nome">Proprietário</label><input id="cp-nome" name="proprietario" autocomplete="name" /></div>
+            <div class="campo"><label for="cp-cel">Celular / WhatsApp *</label><input id="cp-cel" name="celular" type="tel" autocomplete="tel" required /></div>
+            <div class="campo"><label for="cp-tel">Telefone</label><input id="cp-tel" name="telefone" type="tel" /></div>
+            <div class="campo"><label for="cp-mail">E-mail</label><input id="cp-mail" name="email" type="email" autocomplete="email" /></div>
+          </div>
+        </fieldset>
+        <fieldset class="bloco"><legend>2. O imóvel</legend>
+          <div class="campo"><span class="rotulo">Finalidade</span>
+            <div class="opcoes"><label><input type="checkbox" name="finalidade" value="Alugar" /> Alugar</label><label><input type="checkbox" name="finalidade" value="Vender" /> Vender</label><label><input type="checkbox" name="finalidade" value="Temporada" /> Temporada</label></div>
+          </div>
+          <div class="duas">
+            <div class="campo"><label for="cp-tipo">Tipo de imóvel</label><select id="cp-tipo" name="tipo"><option value="">Selecione</option>{tipos.map((t) => <option>{t}</option>)}</select></div>
+            <div class="campo"><label for="cp-cond">Nome do condomínio / edifício</label><input id="cp-cond" name="condominio" /></div>
+          </div>
+          <div class="campo"><span class="rotulo">Aceita financiamento?</span>
+            <div class="opcoes"><label><input type="radio" name="financiamento" value="Sim" /> Sim</label><label><input type="radio" name="financiamento" value="Não" /> Não</label></div>
+          </div>
+          <div class="campo"><label for="cp-end">Endereço</label><input id="cp-end" name="endereco" autocomplete="street-address" /></div>
+        </fieldset>
+        <fieldset class="bloco"><legend>3. Medidas e cômodos</legend>
+          <div class="duas">
+            <div class="campo"><label for="cp-at">Área total / terreno</label><input id="cp-at" name="area_total" inputmode="decimal" placeholder="m²" /></div>
+            <div class="campo"><label for="cp-au">Área útil / construída</label><input id="cp-au" name="area_util" inputmode="decimal" placeholder="m²" /></div>
+            <div class="campo"><label for="cp-dorm">Dormitórios</label><input id="cp-dorm" name="dormitorios" inputmode="numeric" /></div>
+            <div class="campo"><label for="cp-su">Suítes</label><input id="cp-su" name="suites" inputmode="numeric" /></div>
+            <div class="campo"><label for="cp-vc">Vagas cobertas</label><input id="cp-vc" name="vagas_cobertas" inputmode="numeric" /></div>
+            <div class="campo"><label for="cp-vd">Vagas descobertas</label><input id="cp-vd" name="vagas_descobertas" inputmode="numeric" /></div>
+          </div>
+          <div class="campo"><label for="cp-out">Outras características</label><textarea id="cp-out" name="outras" rows="3" placeholder="Ex.: piscina, área gourmet, perto da praia…"></textarea></div>
+        </fieldset>
+        <input class="mel" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <label class="consent"><input type="checkbox" name="consentimento" required /> <span>Autorizo a A. Menezes a usar estes dados para avaliar e anunciar meu imóvel, conforme a <a href={u('/politica-de-privacidade/')}>Política de Privacidade</a>.</span></label>
+        <button class="btn" type="submit" data-magnetic>Cadastrar meu imóvel</button>
+        <div class="form-ok" tabindex="-1" role="status"><strong>Cadastro recebido!</strong><p style="margin:.4em 0 0">Um corretor vai entrar em contato pelo WhatsApp para agendar a visita ao imóvel.</p></div>
+      </form>
+      <aside data-revelar class="vantagens">
+        <p class="sobre-titulo">Por que anunciar com a gente</p>
+        <ul>
+          <li><Icone nome="check" /><div><b>{anos()} anos de mercado local</b><span>Avaliação realista, baseada em quem vende e aluga em Marataízes desde 1957.</span></div></li>
+          <li><Icone nome="check" /><div><b>Venda, aluguel anual ou temporada</b><span>Inclusive com reserva online para o seu imóvel de veraneio.</span></div></li>
+          <li><Icone nome="check" /><div><b>Atendimento direto</b><span>Você fala com Sérgio Menezes, sem intermediários.</span></div></li>
+        </ul>
+        <a class="btn btn--wa" href={waLink('Olá! Tenho um imóvel em Marataízes e quero anunciar com a A. Menezes.')} data-wa target="_blank" rel="noopener"><Icone nome="wa" /> Prefiro falar pelo WhatsApp</a>
+      </aside>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .bloco { border: 0; padding: 0; margin: 0 0 8px; display: grid; gap: 14px; }
+  .bloco legend { font-family: var(--fonte-display); font-size: 1.4rem; margin-bottom: 14px; color: var(--azul); }
+  .rotulo { font-size: .86rem; font-weight: 500; }
+  .vantagens ul { list-style: none; padding: 0; margin: 0 0 28px; display: grid; gap: 22px; }
+  .vantagens li { display: flex; gap: 14px; }
+  .vantagens svg { color: var(--azul); flex: none; margin-top: 3px; }
+  .vantagens b { display: block; font-size: 1.1rem; }
+  .vantagens span { color: var(--texto-escuro-2); }
+  @media (min-width: 900px) { .vantagens { position: sticky; top: 110px; } }
+</style>

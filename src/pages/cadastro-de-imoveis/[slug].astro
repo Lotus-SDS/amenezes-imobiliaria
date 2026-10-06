@@ -1,0 +1,195 @@
+---
+import { u } from '../../lib/url';
+// Página do imóvel — mesma URL do site atual (/cadastro-de-imoveis/{slug}/)
+import Base from '../../layouts/Base.astro';
+import Faixa from '../../components/Faixa.astro';
+import Card from '../../components/Card.astro';
+import LeadForm from '../../components/LeadForm.astro';
+import Icone from '../../components/Icone.astro';
+import { imoveis, type Imovel, FINALIDADES, precoPrincipal, local, tituloBonito, waImovel, waVisita, temFinanciamento, reais, altFoto } from '../../lib/imoveis';
+import { brand } from '../../../brand.config';
+
+export function getStaticPaths() {
+  return imoveis.map((i) => ({ params: { slug: i.slug }, props: { i } }));
+}
+const { i } = Astro.props as { i: Imovel };
+const fin = FINALIDADES[i.finalidade];
+const preco = precoPrincipal(i);
+const titulo = tituloBonito(i);
+const fotos = i.fotos.length ? i.fotos : i.capa ? [{ full: i.capa.src, src: i.capa.src }] : [];
+const ficha = [
+  i.quartos && { ic: 'cama', v: i.quartos, r: i.quartos === 1 ? 'quarto' : 'quartos' },
+  i.suites && { ic: 'cama', v: i.suites, r: i.suites === 1 ? 'suíte' : 'suítes' },
+  i.banheiros && { ic: 'banho', v: i.banheiros, r: i.banheiros === 1 ? 'banheiro' : 'banheiros' },
+  i.garagem && { ic: 'carro', v: i.garagem, r: i.garagem === 1 ? 'vaga' : 'vagas' },
+  i.area && { ic: 'area', v: `${i.area.toLocaleString('pt-BR')} m²`, r: 'área' },
+  i.pessoas && i.finalidade === 'temporada' && { ic: 'pessoas', v: i.pessoas, r: 'pessoas' },
+].filter(Boolean) as { ic: any; v: any; r: string }[];
+const extras = i.precos.filter((p) => !/venda|aluguel/i.test(p.rotulo));
+const similares = imoveis.filter((x) => x.id !== i.id && x.finalidade === i.finalidade && x.tipo === i.tipo && x.capa)
+  .sort((a, b) => (a.bairro === i.bairro ? -1 : 0) - (b.bairro === i.bairro ? -1 : 0)).slice(0, 3);
+const financiavel = temFinanciamento(i);
+
+const tipoSchema: Record<string, string> = { Casa: 'House', Duplex: 'House', Apartamento: 'Apartment', Lote: 'Place', Loja: 'Place', Galpão: 'Place' };
+const schema = [{
+  '@context': 'https://schema.org',
+  '@type': 'RealEstateListing',
+  name: titulo,
+  url: `${brand.site}${i.url}`,
+  datePosted: i.modificado.slice(0, 10),
+  image: fotos.slice(0, 6).map((f) => f.full),
+  description: i.descricaoHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300),
+  offers: (i.preco || i.aluguel) ? { '@type': 'Offer', price: i.preco || i.aluguel, priceCurrency: 'BRL', businessFunction: i.finalidade === 'venda' ? 'http://purl.org/goodrelations/v1#Sell' : 'http://purl.org/goodrelations/v1#LeaseOut', seller: { '@id': `${brand.site}/#imobiliaria` } } : undefined,
+  about: {
+    '@type': tipoSchema[i.tipo] || 'Accommodation',
+    address: { '@type': 'PostalAddress', streetAddress: i.endereco, addressLocality: i.cidade, addressRegion: 'ES', addressCountry: 'BR' },
+    ...(i.geo ? { geo: { '@type': 'GeoCoordinates', latitude: i.geo.lat, longitude: i.geo.lng } } : {}),
+    ...(i.quartos ? { numberOfRooms: i.quartos } : {}),
+    ...(i.area ? { floorSize: { '@type': 'QuantitativeValue', value: i.area, unitCode: 'MTK' } } : {}),
+  },
+}, {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Início', item: brand.site },
+    { '@type': 'ListItem', position: 2, name: fin.rotulo, item: `${brand.site}${fin.url}` },
+    { '@type': 'ListItem', position: 3, name: titulo },
+  ],
+}];
+const descricao = `${i.tipo} ${fin.rotulo.toLowerCase()} em ${local(i)}${i.quartos ? `, ${i.quartos} quarto(s)` : ''}${i.area ? `, ${i.area} m²` : ''}. ${preco.valor !== 'Consulte' ? `${preco.valor}${preco.sufixo ? ' ' + preco.sufixo : ''}. ` : ''}Código ${i.codigo}. A. Menezes Imobiliária.`;
+---
+<Base titulo={`${titulo} — ${fin.rotulo} em ${i.bairro || i.cidade}`} descricao={descricao} imagem={i.capa?.src} schema={schema} waTexto={`Olá! Tenho interesse no imóvel cód. ${i.codigo} – ${titulo}: ${brand.site}${i.url}`} ogTipo="article">
+  <Faixa cena={fin.cena} compacta titulo={titulo} migalhas={[{ href: fin.url, nome: fin.rotulo }, { nome: i.codigo ? `Cód. ${i.codigo}` : i.tipo }]}>
+    <p class="imovel-meta"><span><Icone nome="pin" /> {i.endereco ? `${i.endereco} · ` : ''}{local(i)}</span>{i.codigo && <span>Código <b>{i.codigo}</b></span>}<span>{i.tipo} · {fin.rotulo}</span></p>
+  </Faixa>
+
+  <div class="claro">
+    <div class="wrap imovel">
+      {fotos.length > 0 && (
+        <div class="galeria" data-galeria>
+          {fotos.slice(0, 5).map((f, k) => (
+            <button type="button" class:list={['galeria-item', { 'galeria-item--maior': k === 0 }]} data-abrir={k} aria-label={`Ampliar foto ${k + 1} de ${fotos.length}`}>
+              <img src={k === 0 && i.capa ? i.capa.src : f.src} srcset={k === 0 && i.capa ? i.capa.srcset : undefined} sizes={k === 0 ? '(max-width: 900px) 100vw, 60vw' : '(max-width: 900px) 50vw, 20vw'}
+                alt={k === 0 && i.capa?.alt ? i.capa.alt : altFoto(i, k)} loading={k === 0 ? 'eager' : 'lazy'} fetchpriority={k === 0 ? 'high' : undefined} decoding="async" width="678" height="405" />
+            </button>
+          ))}
+          {fotos.length > 5 && <button type="button" class="btn btn--sm galeria-todas" data-abrir="0">Ver as {fotos.length} fotos</button>}
+          <dialog class="lightbox" aria-label="Fotos do imóvel">
+            <button type="button" class="lb-fechar" data-fechar aria-label="Fechar">✕</button>
+            <button type="button" class="lb-nav lb-ant" data-ant aria-label="Foto anterior">‹</button>
+            <img alt="" data-lb-img />
+            <button type="button" class="lb-nav lb-prox" data-prox aria-label="Próxima foto">›</button>
+            <p class="lb-cont num" data-lb-cont></p>
+            <script is:inline type="application/json" data-fotos set:html={JSON.stringify(fotos.map((f, k) => ({ s: f.full, a: altFoto(i, k) })))} />
+          </dialog>
+        </div>
+      )}
+
+      <div class="imovel-grade">
+        <article class="imovel-corpo">
+          {ficha.length > 0 && (
+            <ul class="ficha">{ficha.map((f) => <li><Icone nome={f.ic} /><b class="num">{f.v}</b><span>{f.r}</span></li>)}</ul>
+          )}
+
+          {financiavel && (
+            <div class="aviso-fin"><Icone nome="check" /><p><b>Financiamento próprio disponível.</b> Parcele direto com a A. Menezes, sem banco — veja a tabela na descrição. <a href={u('/financiamento-proprio/')}>Como funciona</a></p></div>
+          )}
+
+          {i.descricaoHtml && (
+            <section class="prosa" aria-labelledby="desc"><h2 id="desc">Sobre o imóvel</h2><div set:html={i.descricaoHtml} /></section>
+          )}
+
+          {i.caracteristicas.length > 0 && (
+            <section aria-labelledby="carac"><h2 id="carac">Características</h2>
+              <ul class="carac">{i.caracteristicas.map((c) => <li><Icone nome="check" /> {c}</li>)}</ul>
+            </section>
+          )}
+
+          {(i.geo || i.video) && (
+            <section class="midias" aria-label="Localização e vídeo">
+              {i.geo && (
+                <div class="mapa" data-mapa={`https://maps.google.com/maps?q=${i.geo.lat},${i.geo.lng}&z=16&output=embed`}>
+                  <button type="button" class="btn btn--azul"><Icone nome="pin" /> Ver localização no mapa</button>
+                  <p>O mapa do Google só carrega quando você pede.</p>
+                </div>
+              )}
+              {i.video && (
+                <div class="video" data-video={i.video}>
+                  <button type="button" class="btn"><span aria-hidden="true">▶</span> Assistir ao vídeo</button>
+                </div>
+              )}
+            </section>
+          )}
+        </article>
+
+        <aside class="imovel-lateral">
+          <div class="painel cartao-preco">
+            <p class="cp-rotulo">{fin.rotulo}</p>
+            <p class="cp-preco num">{preco.valor} <small>{preco.sufixo}</small></p>
+            {i.finalidade === 'temporada' && <p class="cp-nota" style="margin:-6px 0 14px;text-align:left">O valor total aparece na hora, ao escolher as datas.</p>}
+            {extras.length > 0 && <ul class="cp-extras">{extras.map((p) => <li><span>{p.rotulo}</span><b class="num">{reais(p.valor)}</b></li>)}</ul>}
+            <div class="cp-acoes">
+              {i.finalidade === 'temporada' && (
+                <a class="btn" href={i.linkOriginal} target="_blank" rel="noopener" data-reserva><Icone nome="cal" /> Ver datas e reservar</a>
+              )}
+              <a class="btn btn--wa" href={waImovel(i)} data-wa target="_blank" rel="noopener"><Icone nome="wa" /> Falar sobre este imóvel</a>
+              {i.finalidade !== 'temporada' && <a class="btn btn--linha" href={waVisita(i)} data-wa target="_blank" rel="noopener"><Icone nome="cal" /> Agendar visita</a>}
+              <button type="button" class="link-seta cp-share" data-compartilhar>Compartilhar</button>
+            </div>
+            <p class="cp-nota">Atendimento direto com {brand.gestor} · {brand.contato.whatsappLabel}</p>
+          </div>
+          {i.finalidade !== 'temporada' && (
+            <details class="painel visita-form">
+              <summary>Prefere que a gente ligue? Agende pelo formulário</summary>
+              <LeadForm tipo="visita" imovel={`${i.codigo} – ${titulo}`} />
+            </details>
+          )}
+        </aside>
+      </div>
+
+      {similares.length > 0 && (
+        <section class="similares" aria-labelledby="sim">
+          <h2 id="sim">Você também pode gostar</h2>
+          <div class="cards">{similares.map((s) => <Card i={s} />)}</div>
+        </section>
+      )}
+    </div>
+  </div>
+</Base>
+
+<script>
+  function montar() {
+    // Galeria em <dialog> nativo: teclado, foco e Esc de graça
+    const g = document.querySelector<HTMLElement>('[data-galeria]');
+    if (g && !g.dataset.ok) {
+      g.dataset.ok = '1';
+      const dlg = g.querySelector('dialog')!;
+      const img = dlg.querySelector<HTMLImageElement>('[data-lb-img]')!;
+      const cont = dlg.querySelector('[data-lb-cont]')!;
+      const fotos = JSON.parse(dlg.querySelector('[data-fotos]')!.textContent || '[]');
+      let k = 0;
+      const mostrar = (n: number) => { k = (n + fotos.length) % fotos.length; img.src = fotos[k].s; img.alt = fotos[k].a; cont.textContent = `${k + 1} / ${fotos.length}`; new Image().src = fotos[(k + 1) % fotos.length].s; };
+      g.querySelectorAll<HTMLElement>('[data-abrir]').forEach((b) => b.addEventListener('click', () => { mostrar(Number(b.dataset.abrir)); dlg.showModal(); }));
+      dlg.querySelector('[data-fechar]')!.addEventListener('click', () => dlg.close());
+      dlg.querySelector('[data-ant]')!.addEventListener('click', () => mostrar(k - 1));
+      dlg.querySelector('[data-prox]')!.addEventListener('click', () => mostrar(k + 1));
+      dlg.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') mostrar(k - 1); if (e.key === 'ArrowRight') mostrar(k + 1); });
+      let x0 = 0;
+      dlg.addEventListener('touchstart', (e) => (x0 = e.touches[0].clientX), { passive: true });
+      dlg.addEventListener('touchend', (e) => { const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) mostrar(k + (dx < 0 ? 1 : -1)); });
+      dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+    }
+    // Mapa e vídeo só carregam no clique (nada de terceiros pesando a página)
+    document.querySelectorAll<HTMLElement>('[data-mapa]').forEach((m) => m.querySelector('button')?.addEventListener('click', () => {
+      m.innerHTML = `<iframe src="${m.dataset.mapa}" title="Localização do imóvel" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+    }, { once: true }));
+    document.querySelectorAll<HTMLElement>('[data-video]').forEach((v) => v.querySelector('button')?.addEventListener('click', () => {
+      v.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${v.dataset.video}?autoplay=1" title="Vídeo do imóvel" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    }, { once: true }));
+    document.querySelectorAll<HTMLButtonElement>('[data-compartilhar]').forEach((b) => b.addEventListener('click', async () => {
+      const dados = { title: document.title, url: location.href };
+      if (navigator.share) { try { await navigator.share(dados); } catch { /* cancelado */ } }
+      else { await navigator.clipboard.writeText(location.href); b.textContent = 'Link copiado!'; }
+    }));
+  }
+  document.addEventListener('astro:page-load', montar);
+</script>

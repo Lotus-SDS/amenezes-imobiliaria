@@ -1,0 +1,47 @@
+---
+// Política reescrita para a imobiliária e para a LGPD (a anterior era cópia do texto de uma ONG).
+// [PREENCHER: revisão jurídica antes de publicar + nome do encarregado de dados (DPO)]
+import Base from '../layouts/Base.astro';
+import Faixa from '../components/Faixa.astro';
+import { brand } from '../../brand.config';
+const c = brand.contato;
+---
+<Base titulo="Política de privacidade" descricao="Como a A. Menezes Imobiliária coleta, usa e protege seus dados pessoais, conforme a LGPD (Lei 13.709/2018).">
+  <Faixa cena="interna" compacta sobre="LGPD" titulo="Política de privacidade" migalhas={[{ nome: 'Política de privacidade' }]} />
+  <section class="claro secao">
+    <div class="wrap prosa-pagina">
+      <p><i>Última atualização: outubro de 2026 · [PREENCHER: revisão jurídica]</i></p>
+      <p>Esta política explica como a <b>{brand.razaoSocial}</b> ("A. Menezes"), com sede em {c.endereco.rua}, {c.endereco.cidade} – {c.endereco.uf}, trata os dados pessoais de quem usa o site amenezes.com.br, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).</p>
+
+      <h2>1. Quais dados coletamos</h2>
+      <ul>
+        <li><b>Dados que você informa</b> nos formulários de contato, agendamento de visita, cadastro de imóvel e reserva de temporada: nome, telefone/WhatsApp, e-mail, datas, número de hóspedes e dados do imóvel.</li>
+        <li><b>Dados de navegação</b>, como endereço IP, tipo de navegador e páginas visitadas — e, apenas com o seu consentimento, cookies de medição do Google e da Meta.</li>
+      </ul>
+
+      <h2>2. Para que usamos</h2>
+      <ul>
+        <li>Responder ao seu contato e prestar o atendimento solicitado (execução de contrato ou de procedimentos preliminares);</li>
+        <li>Processar reservas de temporada e cumprir obrigações legais e fiscais;</li>
+        <li>Avaliar e anunciar o imóvel que você cadastrar;</li>
+        <li>Medir e melhorar o site e as campanhas, somente se você aceitar os cookies de medição (consentimento).</li>
+      </ul>
+      <p>Não vendemos seus dados.</p>
+
+      <h2>3. Com quem compartilhamos</h2>
+      <p>Apenas com prestadores que nos ajudam a operar o site e o atendimento (hospedagem, e-mail, meios de pagamento da reserva e, se autorizado, ferramentas de medição do Google e da Meta), e com autoridades quando a lei exigir.</p>
+
+      <h2>4. Cookies</h2>
+      <p>Usamos cookies essenciais para o site funcionar. Cookies de medição só são ativados se você clicar em "Aceitar" no aviso de cookies. Para mudar sua escolha, limpe os dados do site no navegador e o aviso aparecerá novamente.</p>
+
+      <h2>5. Por quanto tempo guardamos</h2>
+      <p>Pelo tempo necessário para o atendimento e para cumprir obrigações legais. Depois disso, os dados são excluídos ou anonimizados.</p>
+
+      <h2>6. Seus direitos</h2>
+      <p>Você pode pedir a qualquer momento: confirmação e acesso aos seus dados, correção, anonimização, portabilidade, exclusão, informação sobre compartilhamento e revogação do consentimento.</p>
+
+      <h2>7. Fale com a gente</h2>
+      <p>Encarregado pelo tratamento de dados: [PREENCHER: nome do encarregado]. Contato: <a href={`mailto:${c.email}`}>{c.email}</a> · WhatsApp {c.whatsappLabel}.</p>
+    </div>
+  </section>
+</Base>

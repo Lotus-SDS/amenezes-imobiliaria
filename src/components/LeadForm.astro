@@ -1,0 +1,36 @@
+---
+import { u } from '../lib/url';
+// Formulário de contato / agendamento. Sem JS faz POST normal; com JS, envio assíncrono + recompensa visual.
+interface Props { tipo?: 'contato' | 'visita'; imovel?: string; titulo?: string }
+const { tipo = 'contato', imovel, titulo } = Astro.props;
+const id = `f-${tipo}-${Math.random().toString(36).slice(2, 7)}`;
+---
+<form class="form" data-lead={tipo} method="post" action={u('/obrigado/')} novalidate={false}>
+  {titulo && <h3>{titulo}</h3>}
+  {imovel && <input type="hidden" name="imovel" value={imovel} />}
+  <div class="duas">
+    <div class="campo"><label for={`${id}-nome`}>Nome</label><input id={`${id}-nome`} name="nome" autocomplete="name" required /></div>
+    <div class="campo"><label for={`${id}-tel`}>WhatsApp</label><input id={`${id}-tel`} name="telefone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(28) 9 0000-0000" required /></div>
+  </div>
+  {tipo === 'visita' ? (
+    <div class="duas">
+      <div class="campo"><label for={`${id}-dia`}>Melhor dia</label><input id={`${id}-dia`} name="dia" type="date" required /></div>
+      <div class="campo"><label for={`${id}-per`}>Período</label>
+        <select id={`${id}-per`} name="periodo"><option>Manhã</option><option>Tarde</option><option>Tanto faz</option></select></div>
+    </div>
+  ) : (
+    <div class="campo"><label for={`${id}-int`}>Tenho interesse em</label>
+      <select id={`${id}-int`} name="interesse">
+        <option>Comprar um imóvel</option><option>Alugar (anual)</option><option>Temporada</option>
+        <option>Lote com financiamento próprio</option><option>Anunciar meu imóvel</option><option>Outro assunto</option>
+      </select></div>
+  )}
+  <div class="campo"><label for={`${id}-msg`}>Mensagem <small>(opcional)</small></label><textarea id={`${id}-msg`} name="mensagem" rows="3"></textarea></div>
+  <input class="mel" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+  <label class="consent"><input type="checkbox" name="consentimento" required /> <span>Autorizo a A. Menezes a usar estes dados para responder meu contato, conforme a <a href={u('/politica-de-privacidade/')}>Política de Privacidade</a>.</span></label>
+  <button class="btn" type="submit" data-magnetic>{tipo === 'visita' ? 'Agendar visita' : 'Enviar mensagem'}</button>
+  <div class="form-ok" tabindex="-1" role="status">
+    <strong>Recebido! Uma luz nova acendeu na orla.</strong>
+    <p style="margin:.4em 0 0">Respondemos pelo WhatsApp em horário comercial. Se preferir, chame agora mesmo.</p>
+  </div>
+</form>
