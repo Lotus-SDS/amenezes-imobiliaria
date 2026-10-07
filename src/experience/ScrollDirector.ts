@@ -4,6 +4,7 @@
 import gsap from 'gsap';
 import { CENAS, abertura, formasAbertura, type Estado, type Moldura } from './cenas';
 import type { Engine } from './Engine';
+import { progressoDe } from './progresso';
 
 type Secao = { nome: string; el: HTMLElement; top: number };
 
@@ -86,13 +87,7 @@ export class ScrollDirector {
 
   progresso() {
     if (this.override !== null) return this.override;
-    const vh = innerHeight, y = scrollY;
-    let s = 0;
-    for (let i = 1; i < this.secoes.length; i++) {
-      const top = this.secoes[i].top - y;
-      s += Math.min(1, Math.max(0, (vh * 0.92 - top) / (vh * 0.62)));
-    }
-    return s;
+    return progressoDe(this.secoes.map((s) => s.top));
   }
 
   private estadoDe(i: number): Estado {

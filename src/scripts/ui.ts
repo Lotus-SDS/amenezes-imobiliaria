@@ -4,7 +4,8 @@
 import gsap from 'gsap';
 import Lenis from 'lenis';
 import type { Experiencia } from '../experience/index';
-import { detectarModo } from '../experience/QualityManager';
+import { detectarModo, lembrarVideo } from '../experience/QualityManager';
+import { montarVideo } from './video';
 
 const reduzido = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const fino = matchMedia('(pointer: fine)').matches;
@@ -48,7 +49,7 @@ export function iniciarUI() {
     html.classList.add('js', 'fotos-suaves');
     if (exp) html.classList.add('cena-pronta');
     if (estadoTier) html.dataset.tier = estadoTier;
-    if (estadoTier === 'estatico') html.classList.add('sem-cena');
+    if (estadoTier === 'estatico' || estadoTier === 'video') html.classList.add('sem-cena');
     lenis?.scrollTo(0, { immediate: true });
   });
 
@@ -65,20 +66,32 @@ async function iniciar3D() {
   const modo = detectarModo();
   document.documentElement.dataset.tier = estadoTier = modo;
   if (modo === 'estatico') return revelarSemCena();
+  if (modo === 'video') return iniciarVideo();
   try {
     const { iniciarExperiencia } = await import('../experience/index');
     exp = await iniciarExperiencia(canvas, modo);
     if (!exp) return revelarSemCena();
     document.documentElement.classList.add('cena-pronta');
     canvas.addEventListener('experiencia:falha', () => {
+      // o aparelho não deu conta: troca para o vídeo agora e nas próximas visitas
       document.documentElement.classList.remove('cena-pronta');
+      exp?.director.desmontar();
       exp?.engine.dispose();
       exp = null;
+      lembrarVideo();
+      iniciarVideo();
     });
   } catch (e) {
-    console.warn('[A.Menezes] experiência 3D indisponível, seguindo com a versão estática.', e);
-    revelarSemCena();
+    console.warn('[A.Menezes] experiência 3D indisponível, seguindo com o vídeo da cena.', e);
+    iniciarVideo();
   }
+}
+
+// Aparelho fraco: vídeo da cena no lugar do 3D (pôster por baixo até carregar)
+function iniciarVideo() {
+  document.documentElement.dataset.tier = estadoTier = 'video';
+  revelarSemCena();
+  montarVideo();
 }
 
 // Sem 3D: a abertura não acontece, então o título aparece direto
@@ -89,6 +102,7 @@ function revelarSemCena() {
 function aoCarregarPagina() {
   document.documentElement.classList.remove('menu-aberto');
   if (exp) exp.director.montar();
+  else if (estadoTier === 'video') montarVideo();
 
   revelacoes();
   contadores();

@@ -8,7 +8,7 @@ import type { Modo } from './QualityManager';
 
 export type Experiencia = { engine: Engine; director: ScrollDirector; audio: AudioEngine };
 
-export async function iniciarExperiencia(canvas: HTMLCanvasElement, modo: Exclude<Modo, 'estatico'>): Promise<Experiencia | null> {
+export async function iniciarExperiencia(canvas: HTMLCanvasElement, modo: Exclude<Modo, 'estatico' | 'video'>): Promise<Experiencia | null> {
   const engine = new Engine(canvas, modo);
   await engine.iniciar();
   const director = new ScrollDirector(engine);

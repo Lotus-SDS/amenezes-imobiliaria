@@ -37,6 +37,8 @@ export class Engine {
   atual: Estado | null = null;
   ativo = true;
   webgpu = false;
+  // ?gravar: sem laço próprio; scripts/gravar-video.mjs avança quadro a quadro com passo()
+  gravando = new URLSearchParams(location.search).has('gravar');
   // entradas da interação (InteractionManager)
   parallax = { x: 0, y: 0 };
   giro = 0;
@@ -46,7 +48,7 @@ export class Engine {
   private dprBase = 1;
   private recompensas: { sprite: Sprite; t0: number; escala: any }[] = [];
 
-  constructor(public canvas: HTMLCanvasElement, public modo: Exclude<Modo, 'estatico'>) {
+  constructor(public canvas: HTMLCanvasElement, public modo: Exclude<Modo, 'estatico' | 'video'>) {
     this.qm = new QualityManager(modo);
   }
 
@@ -106,7 +108,7 @@ export class Engine {
   }
 
   private sincronizarLaco() {
-    const rodar = this.ativo && !document.hidden;
+    const rodar = this.ativo && !document.hidden && !this.gravando;
     this.renderer.setAnimationLoop(rodar ? () => this.quadro() : null);
     this.relogio = performance.now();
   }
@@ -133,19 +135,26 @@ export class Engine {
     U.solBrilho.value = 0.55 + noite * 0.7 + Math.max(0, 1 - Math.abs(h - 0.75) / 0.12) * 0.45 + Math.max(0, 1 - Math.abs(h - 0.25) / 0.12) * 0.35;
   }
 
-  private quadro() {
+  // Gravação do vídeo: um quadro com passo de tempo fixo. `extras` passos a mais só na simulação,
+  // para as silhuetas se formarem dentro de 1 s de vídeo por seção (ao vivo, a pessoa para e espera).
+  passo(dt: number, extras = 0) {
+    for (let i = 0; i < extras; i++) this.sim.step(this.renderer, dt);
+    this.quadro(dt);
+  }
+
+  private quadro(dtFixo?: number) {
     const agora = performance.now();
     const ms = agora - this.relogio;
     this.relogio = agora;
-    const dt = Math.min(ms / 1000, 1 / 20);
+    const dt = dtFixo ?? Math.min(ms / 1000, 1 / 20);
     this.tempo += dt;
-    this.qm.amostrar(ms);
+    if (!this.gravando) this.qm.amostrar(ms);
 
     const fonte = this.fonte?.avaliar();
     if (fonte) {
       const alvo = moldar(enquadrar(fonte.estado, this.camera.aspect), fonte.moldura ?? null, this.camera.fov, this.camera.aspect);
       if (!this.atual) this.atual = structuredClone(alvo);
-      suavizar(this.atual, alvo, 1 - Math.exp(-dt * 5.5));
+      suavizar(this.atual, alvo, this.gravando ? 1 : 1 - Math.exp(-dt * 5.5));
       const [a, b, m] = fonte.formas;
       this.sim.formaA.value = a;
       this.sim.formaB.value = b;
