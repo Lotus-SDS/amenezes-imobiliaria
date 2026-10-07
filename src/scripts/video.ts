@@ -5,9 +5,9 @@ import gsap from 'gsap';
 import { progressoDe } from '../experience/progresso';
 
 // Precisam bater com scripts/gravar-video.mjs
-const FPS = 24;
-const VIDEO_INTRO = 135 / FPS; // a abertura de 5,6 s do 3D
-const POR_SECAO = 48 / FPS; // segundos de vídeo por seção
+const FPS = 48;
+const VIDEO_INTRO = 270 / FPS; // a abertura de 5,6 s do 3D
+const POR_SECAO = 96 / FPS; // segundos de vídeo por seção
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const html = document.documentElement;
