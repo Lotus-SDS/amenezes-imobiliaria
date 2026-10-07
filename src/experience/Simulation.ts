@@ -20,7 +20,8 @@ export class Simulation {
   escala = uniform(2.2);
   dt = uniform(1 / 60);
   amort = uniform(0.88);
-  rigidez = uniform(12);
+  // mola forte: a silhueta acompanha a rolagem e fica pronta antes da próxima seção (com 12 ainda era um borrão)
+  rigidez = uniform(36);
   turb = uniform(0.25);
 
   // gera os alvos em fatias (async) e só então monta os buffers

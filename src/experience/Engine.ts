@@ -135,12 +135,8 @@ export class Engine {
     U.solBrilho.value = 0.55 + noite * 0.7 + Math.max(0, 1 - Math.abs(h - 0.75) / 0.12) * 0.45 + Math.max(0, 1 - Math.abs(h - 0.25) / 0.12) * 0.35;
   }
 
-  // Gravação do vídeo: um quadro com passo de tempo fixo. `extras` passos a mais só na simulação,
-  // para as silhuetas se formarem dentro de 1 s de vídeo por seção (ao vivo, a pessoa para e espera).
-  passo(dt: number, extras = 0) {
-    for (let i = 0; i < extras; i++) this.sim.step(this.renderer, dt);
-    this.quadro(dt);
-  }
+  // Gravação do vídeo: um quadro com passo de tempo fixo
+  passo(dt: number) { this.quadro(dt); }
 
   private quadro(dtFixo?: number) {
     const agora = performance.now();

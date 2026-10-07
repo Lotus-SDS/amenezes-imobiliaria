@@ -1,5 +1,5 @@
 // Modo vídeo (aparelho fraco): no lugar do 3D ao vivo, a cena gravada por scripts/gravar-video.mjs.
-// O arquivo tem a abertura (VIDEO_INTRO s) seguida da cena da home, 1 s por seção; a rolagem escolhe o quadro.
+// O arquivo tem a abertura (VIDEO_INTRO s) seguida da cena da home, 2 s por seção; a rolagem escolhe o quadro.
 // Páginas internas ficam com o pôster (o sol delas depende do layout de cada tela).
 import gsap from 'gsap';
 import { progressoDe } from '../experience/progresso';
@@ -7,6 +7,7 @@ import { progressoDe } from '../experience/progresso';
 // Precisam bater com scripts/gravar-video.mjs
 const FPS = 24;
 const VIDEO_INTRO = 135 / FPS; // a abertura de 5,6 s do 3D
+const POR_SECAO = 48 / FPS; // segundos de vídeo por seção
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const html = document.documentElement;
@@ -14,6 +15,7 @@ let video: HTMLVideoElement | null = null;
 let tops: number[] = [];
 let ativo = false;
 let tocandoIntro = false;
+let mostrado = -1; // tempo exibido: persegue o da rolagem passando pelos quadros do meio, sem saltos
 
 export function montarVideo() {
   if (!document.querySelector('[data-cena="hero"]')) return pararVideo();
@@ -70,8 +72,10 @@ function atualizar() {
     tocandoIntro = false;
     gravarSessao('am-intro', '1');
   }
-  const t = Math.min(VIDEO_INTRO + progressoDe(tops), (v.duration || Infinity) - 0.01);
-  if (!v.seeking && Math.abs(v.currentTime - t) > 0.5 / FPS) v.currentTime = t;
+  const alvo = Math.min(VIDEO_INTRO + progressoDe(tops) * POR_SECAO, (v.duration || Infinity) - 0.01);
+  if (mostrado < 0) mostrado = v.currentTime;
+  mostrado += (alvo - mostrado) * 0.18;
+  if (!v.seeking && Math.abs(v.currentTime - mostrado) > 0.5 / FPS) v.currentTime = mostrado;
 }
 
 // sessionStorage pode lançar exceção (modo privado, iframe)
