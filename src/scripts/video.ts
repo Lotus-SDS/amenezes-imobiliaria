@@ -50,8 +50,20 @@ function criar() {
   v.preload = 'auto';
   v.setAttribute('aria-hidden', 'true');
   v.src = `${BASE}/video/cena-${innerWidth >= innerHeight ? 'h' : 'v'}.mp4`;
+  v.load(); // o iOS ignora preload: pede o arquivo explicitamente
   // o pôster fica por baixo até o primeiro quadro; se o vídeo falhar, ele simplesmente fica
-  v.addEventListener('loadeddata', () => ativo && html.classList.add('video-pronto'));
+  const mostrar = () => ativo && html.classList.add('video-pronto');
+  v.addEventListener('loadeddata', mostrar);
+  v.addEventListener('seeked', mostrar);
+  // iOS (e modo de pouca energia): sem um play() o vídeo não carrega nem desenha quadros ao buscar.
+  // Destrava no primeiro toque ou rolagem: toca e pausa na hora.
+  const destravar = () => {
+    removeEventListener('touchstart', destravar);
+    removeEventListener('scroll', destravar);
+    v.play().then(() => { if (!tocandoIntro) v.pause(); }).catch(() => {});
+  };
+  addEventListener('touchstart', destravar, { passive: true });
+  addEventListener('scroll', destravar, { passive: true });
   document.querySelector('.poster')!.append(v);
   addEventListener('resize', medir);
   gsap.ticker.add(atualizar);

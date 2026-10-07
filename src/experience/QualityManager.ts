@@ -5,10 +5,12 @@ import type { Tier } from '../../brand.config';
 
 export type Modo = Tier | 'estatico' | 'video';
 
-// Lembra entre visitas que o 3D desistiu neste aparelho
-const CHAVE_VIDEO = 'am-modo';
-export function lembrarVideo() { try { localStorage.setItem(CHAVE_VIDEO, 'video'); } catch { /* sem persistência */ } }
-function lembrouVideo() { try { return localStorage.getItem(CHAVE_VIDEO) === 'video'; } catch { return false; } }
+// Lembra entre visitas que o 3D desistiu neste aparelho, por 7 dias: depois tenta o 3D de novo
+// (uma correção no 3D ou no navegador pode ter resolvido). Chave nova = esquece desistências antigas.
+const CHAVE_VIDEO = 'am-modo-2';
+const VALIDADE = 7 * 864e5;
+export function lembrarVideo() { try { localStorage.setItem(CHAVE_VIDEO, String(Date.now())); } catch { /* sem persistência */ } }
+function lembrouVideo() { try { return Date.now() - Number(localStorage.getItem(CHAVE_VIDEO) || 0) < VALIDADE; } catch { return false; } }
 
 export function lerGPU(): { webgl2: boolean; renderer: string } {
   try {
