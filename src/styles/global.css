@@ -198,6 +198,12 @@ html.video-pronto .cena-video { opacity: 1; }
 /* Linha de luzes da orla (loader em CSS — vira a cena quando o 3D chega) */
 .orla-css { position: absolute; left: 0; right: 0; top: 58%; height: 40px; pointer-events: none; z-index: -1; opacity: .9; transition: opacity 1.2s; }
 html.cena-pronta .orla-css { opacity: 0; }
+/* celular: o texto começa em 46svh; luzes e horizonte do fundo sobem para o espaço vazio acima dele,
+   onde a cena 3D põe o horizonte (a 58% elas caíam em cima do parágrafo) */
+@media (max-width: 899px) {
+  .orla-css { top: 38svh; left: 11%; }
+  .poster { background: radial-gradient(70% 40% at 50% 42%, rgba(255, 200, 120, .12), transparent 60%), linear-gradient(180deg, #02041A 0%, #0A1240 36%, #16205E 44%, #060B26 44.3%, #030619 100%); }
+}
 .orla-css i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #FFD98A; box-shadow: 0 0 6px 1px rgba(255, 210, 120, .8); animation: piscar 2.4s infinite alternate; }
 @keyframes piscar { from { opacity: .35; } to { opacity: 1; } }
 
