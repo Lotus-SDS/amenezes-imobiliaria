@@ -31,6 +31,7 @@ export function iniciarUI() {
     gsap.ticker.lagSmoothing(0);
   }
 
+  fotosSuaves();
   cabecalho();
   cursor();
   cookies();
@@ -44,7 +45,7 @@ export function iniciarUI() {
   document.addEventListener('astro:after-swap', () => {
     // o roteador troca os atributos do <html> pelos da página nova: reaplica o estado da experiência
     const html = document.documentElement;
-    html.classList.add('js');
+    html.classList.add('js', 'fotos-suaves');
     if (exp) html.classList.add('cena-pronta');
     if (estadoTier) html.dataset.tier = estadoTier;
     if (estadoTier === 'estatico') html.classList.add('sem-cena');
@@ -133,6 +134,19 @@ function contadores() {
     el.textContent = fmtContador(el, Number(el.dataset.de || 0));
     observador.observe(el);
   });
+}
+
+// Fotos: brilho no lugar enquanto carregam e entrada suave quando chegam (o lazy load nativo decide quando baixar).
+// A classe vem daqui, não do HTML: se este script falhar, as fotos aparecem normalmente.
+function fotosSuaves() {
+  const marcar = (img: HTMLImageElement) => { img.classList.add('carregou'); img.parentElement?.classList.add('carregou'); };
+  const aoChegar = (e: Event) => { if ((e.target as HTMLElement).tagName === 'IMG') marcar(e.target as HTMLImageElement); };
+  document.addEventListener('load', aoChegar, true); // load/error não sobem: captura pega todas, inclusive as do <template> da listagem
+  document.addEventListener('error', aoChegar, true);
+  const prontas = () => document.querySelectorAll<HTMLImageElement>('img').forEach((i) => i.complete && marcar(i));
+  prontas();
+  document.documentElement.classList.add('fotos-suaves');
+  document.addEventListener('astro:page-load', prontas);
 }
 
 function cabecalho() {

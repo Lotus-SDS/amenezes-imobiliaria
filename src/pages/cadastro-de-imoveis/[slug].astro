@@ -167,7 +167,7 @@ const descricao = `${i.tipo} ${fin.rotulo.toLowerCase()} em ${local(i)}${i.quart
       const cont = dlg.querySelector('[data-lb-cont]')!;
       const fotos = JSON.parse(dlg.querySelector('[data-fotos]')!.textContent || '[]');
       let k = 0;
-      const mostrar = (n: number) => { k = (n + fotos.length) % fotos.length; img.src = fotos[k].s; img.alt = fotos[k].a; cont.textContent = `${k + 1} / ${fotos.length}`; new Image().src = fotos[(k + 1) % fotos.length].s; };
+      const mostrar = (n: number) => { k = (n + fotos.length) % fotos.length; img.src = fotos[k].s; img.alt = fotos[k].a; cont.textContent = `${k + 1} / ${fotos.length}`; new Image().src = fotos[(k + 1) % fotos.length].s; new Image().src = fotos[(k - 1 + fotos.length) % fotos.length].s; };
       g.querySelectorAll<HTMLElement>('[data-abrir]').forEach((b) => b.addEventListener('click', () => { mostrar(Number(b.dataset.abrir)); dlg.showModal(); }));
       dlg.querySelector('[data-fechar]')!.addEventListener('click', () => dlg.close());
       dlg.querySelector('[data-ant]')!.addEventListener('click', () => mostrar(k - 1));
