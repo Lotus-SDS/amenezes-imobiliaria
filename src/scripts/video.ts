@@ -1,62 +1,61 @@
 // Modo vídeo (aparelho fraco): no lugar do 3D ao vivo, a cena gravada por scripts/gravar-video.mjs.
-// O arquivo tem a abertura (VIDEO_INTRO s) seguida da cena da home, 2 s por seção; a rolagem escolhe o quadro.
-// Por cima, o quadro final da abertura em Full HD (hero-{h,v}.webp): é o que fica mais tempo na tela,
-// então fica nítido; ao rolar ele se dissolve no vídeo de 720p das formas.
+// Três camadas, de baixo para cima:
+//   cena-{h,v}.mp4     720p, 2 s por seção da home; a rolagem escolhe o quadro (as formas)
+//   hero-{h,v}.webp    Full HD, o sol parado no fim da abertura; some no começo da rolagem
+//   abertura-{h,v}.mp4 Full HD, toca uma vez por visita e termina exatamente no quadro do hero
 // Páginas internas ficam com o pôster (o sol delas depende do layout de cada tela).
 import gsap from 'gsap';
 import { progressoDe } from '../experience/progresso';
 
 // Precisam bater com scripts/gravar-video.mjs
 const FPS = 48;
-const VIDEO_INTRO = 270 / FPS; // a abertura de 5,6 s do 3D
 const POR_SECAO = 96 / FPS; // segundos de vídeo por seção
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const html = document.documentElement;
-let video: HTMLVideoElement | null = null;
+let cena: HTMLVideoElement | null = null;
 let hero: HTMLImageElement | null = null;
-let opacHero = -1;
+let abertura: HTMLVideoElement | null = null;
+let formato: 'h' | 'v' = 'h';
 let tops: number[] = [];
 let ativo = false;
-let tocandoIntro = false;
 let mostrado = -1; // tempo exibido: persegue o da rolagem passando pelos quadros do meio, sem saltos
+let opacHero = -1;
 
 export function montarVideo() {
   if (!document.querySelector('[data-cena="hero"]')) return pararVideo();
-  if (!video) criar();
+  if (!cena) criar();
   ativo = true;
   medir();
   document.fonts?.ready.then(medir);
   setTimeout(medir, 1200);
-  if (video!.readyState >= 2) html.classList.add('video-pronto');
-
-  if (!tocandoIntro && !lerSessao('am-intro') && scrollY < 10) {
-    tocandoIntro = true;
-    video!.currentTime = 0;
-    video!.playbackRate = 1;
-    video!.play().catch(() => { tocandoIntro = false; });
-    addEventListener('scroll', acelerarIntro, { passive: true, once: true });
-  }
+  if (cena!.readyState >= 2) html.classList.add('video-pronto');
+  if (!abertura && !lerSessao('am-intro') && scrollY < 10) tocarAbertura();
 }
 
 function pararVideo() {
   ativo = false;
-  tocandoIntro = false;
-  video?.pause();
+  cena?.pause();
+  encerrarAbertura();
   html.classList.remove('video-pronto');
   definirHero(0);
 }
 
-function criar() {
-  const v = (video = document.createElement('video'));
-  v.className = 'cena-video';
+function novoVideo(classe: string, src: string) {
+  const v = document.createElement('video');
+  v.className = classe;
   v.muted = true;
   v.playsInline = true;
-  v.preload = 'auto';
   v.setAttribute('aria-hidden', 'true');
-  const formato = innerWidth >= innerHeight ? 'h' : 'v';
-  v.src = `${BASE}/video/cena-${formato}.mp4`;
-  v.load(); // o iOS ignora preload: pede o arquivo explicitamente
+  v.src = src;
+  return v;
+}
+
+function criar() {
+  formato = innerWidth >= innerHeight ? 'h' : 'v';
+  const v = (cena = novoVideo('cena-video', `${BASE}/video/cena-${formato}.mp4`));
+  // só baixa depois da abertura (ou na primeira rolagem): não disputa banda com ela
+  v.preload = 'none';
   // o pôster fica por baixo até o primeiro quadro; se o vídeo falhar, ele simplesmente fica
   const mostrar = () => ativo && html.classList.add('video-pronto');
   v.addEventListener('loadeddata', mostrar);
@@ -66,25 +65,59 @@ function criar() {
   const destravar = () => {
     removeEventListener('touchstart', destravar);
     removeEventListener('scroll', destravar);
-    v.play().then(() => { if (!tocandoIntro) v.pause(); }).catch(() => {});
+    carregarCena();
+    v.play().then(() => v.pause()).catch(() => {});
   };
   addEventListener('touchstart', destravar, { passive: true });
   addEventListener('scroll', destravar, { passive: true });
+
   const img = (hero = new Image());
   img.className = 'cena-hero';
   img.alt = '';
   img.decoding = 'async';
   img.src = `${BASE}/video/hero-${formato}.webp`;
+
   document.querySelector('.poster')!.append(v, img);
   addEventListener('resize', medir);
   gsap.ticker.add(atualizar);
 }
 
+function carregarCena() {
+  if (!cena || cena.preload !== 'none') return;
+  cena.preload = 'auto';
+  cena.load(); // o iOS ignora preload: pede o arquivo explicitamente
+}
+
+function tocarAbertura() {
+  const a = (abertura = novoVideo('cena-abertura', `${BASE}/video/abertura-${formato}.mp4`));
+  a.preload = 'auto';
+  a.addEventListener('playing', () => a.classList.add('tocando'));
+  a.addEventListener('ended', encerrarAbertura);
+  // internet lenta: se não começar em 2,5 s, pula direto para o sol parado
+  const desistir = setTimeout(encerrarAbertura, 2500);
+  a.addEventListener('playing', () => clearTimeout(desistir), { once: true });
+  addEventListener('scroll', acelerarAbertura, { passive: true, once: true });
+  document.querySelector('.poster')!.append(a);
+  a.play().catch(encerrarAbertura);
+}
+
+function encerrarAbertura() {
+  const a = abertura;
+  if (!a || a.classList.contains('fim')) return;
+  gravarSessao('am-intro', '1');
+  removeEventListener('scroll', acelerarAbertura);
+  a.classList.add('fim');
+  a.pause();
+  carregarCena();
+  // o quadro final é o mesmo do hero: a abertura some por cima da imagem, sem salto
+  setTimeout(() => a.remove(), 900);
+}
+
+const acelerarAbertura = () => { if (abertura) abertura.playbackRate = 4; };
+
 function medir() {
   tops = [...document.querySelectorAll<HTMLElement>('[data-cena]')].map((el) => el.getBoundingClientRect().top + scrollY);
 }
-
-const acelerarIntro = () => { if (video) video.playbackRate = 4; };
 
 function definirHero(o: number) {
   if (!hero || o === opacHero) return;
@@ -93,19 +126,14 @@ function definirHero(o: number) {
 }
 
 function atualizar() {
-  const v = video;
+  const v = cena;
   if (!v || !ativo) return;
   const s = progressoDe(tops);
-  // a imagem Full HD entra quando a abertura termina e some no primeiro terço da rolagem até a próxima seção
-  definirHero(tocandoIntro ? 0 : Math.round(Math.max(0, 1 - s / 0.35) * 100) / 100);
+  // o sol Full HD espera a abertura acabar (não revela o final) e fica até o primeiro terço da rolagem
+  const naAbertura = abertura && !abertura.classList.contains('fim');
+  definirHero(naAbertura ? 0 : Math.round(Math.max(0, 1 - s / 0.35) * 100) / 100);
   if (v.readyState < 1) return;
-  if (tocandoIntro) {
-    if (v.currentTime < VIDEO_INTRO - 0.03 && !v.ended) return;
-    v.pause();
-    tocandoIntro = false;
-    gravarSessao('am-intro', '1');
-  }
-  const alvo = Math.min(VIDEO_INTRO + s * POR_SECAO, (v.duration || Infinity) - 0.01);
+  const alvo = Math.min(s * POR_SECAO, (v.duration || Infinity) - 0.01);
   if (mostrado < 0) mostrado = v.currentTime;
   mostrado += (alvo - mostrado) * 0.18;
   if (!v.seeking && Math.abs(v.currentTime - mostrado) > 0.5 / FPS) v.currentTime = mostrado;
