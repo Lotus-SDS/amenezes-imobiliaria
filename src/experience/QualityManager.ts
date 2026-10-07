@@ -7,7 +7,7 @@ export type Modo = Tier | 'estatico' | 'video';
 
 // Lembra entre visitas que o 3D desistiu neste aparelho, por 7 dias: depois tenta o 3D de novo
 // (uma correção no 3D ou no navegador pode ter resolvido). Chave nova = esquece desistências antigas.
-const CHAVE_VIDEO = 'am-modo-2';
+const CHAVE_VIDEO = 'am-modo-3';
 const VALIDADE = 7 * 864e5;
 export function lembrarVideo() { try { localStorage.setItem(CHAVE_VIDEO, String(Date.now())); } catch { /* sem persistência */ } }
 function lembrouVideo() { try { return Date.now() - Number(localStorage.getItem(CHAVE_VIDEO) || 0) < VALIDADE; } catch { return false; } }
@@ -65,7 +65,7 @@ export class QualityManager {
   private acima = 0; // ms seguidos acima do orçamento
   private abaixo = 0; // ms seguidos com folga
   private lento = 0; // ms seguidos abaixo de ~14 fps
-  private aquecendo = 1200; // ignora o começo (compilação, upload)
+  private aquecendo = 3000; // ignora o começo (compilação de pipelines nos 1ºs quadros, upload): não desistir à toa no celular
   onEscala?: (escala: number) => void;
   onCorte?: (nivel: number) => void;
   nivelCorte = 0;

@@ -1,5 +1,7 @@
 // Modo vídeo (aparelho fraco): no lugar do 3D ao vivo, a cena gravada por scripts/gravar-video.mjs.
 // O arquivo tem a abertura (VIDEO_INTRO s) seguida da cena da home, 2 s por seção; a rolagem escolhe o quadro.
+// Por cima, o quadro final da abertura em Full HD (hero-{h,v}.webp): é o que fica mais tempo na tela,
+// então fica nítido; ao rolar ele se dissolve no vídeo de 720p das formas.
 // Páginas internas ficam com o pôster (o sol delas depende do layout de cada tela).
 import gsap from 'gsap';
 import { progressoDe } from '../experience/progresso';
@@ -12,6 +14,8 @@ const POR_SECAO = 96 / FPS; // segundos de vídeo por seção
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const html = document.documentElement;
 let video: HTMLVideoElement | null = null;
+let hero: HTMLImageElement | null = null;
+let opacHero = -1;
 let tops: number[] = [];
 let ativo = false;
 let tocandoIntro = false;
@@ -40,6 +44,7 @@ function pararVideo() {
   tocandoIntro = false;
   video?.pause();
   html.classList.remove('video-pronto');
+  definirHero(0);
 }
 
 function criar() {
@@ -49,7 +54,8 @@ function criar() {
   v.playsInline = true;
   v.preload = 'auto';
   v.setAttribute('aria-hidden', 'true');
-  v.src = `${BASE}/video/cena-${innerWidth >= innerHeight ? 'h' : 'v'}.mp4`;
+  const formato = innerWidth >= innerHeight ? 'h' : 'v';
+  v.src = `${BASE}/video/cena-${formato}.mp4`;
   v.load(); // o iOS ignora preload: pede o arquivo explicitamente
   // o pôster fica por baixo até o primeiro quadro; se o vídeo falhar, ele simplesmente fica
   const mostrar = () => ativo && html.classList.add('video-pronto');
@@ -64,7 +70,12 @@ function criar() {
   };
   addEventListener('touchstart', destravar, { passive: true });
   addEventListener('scroll', destravar, { passive: true });
-  document.querySelector('.poster')!.append(v);
+  const img = (hero = new Image());
+  img.className = 'cena-hero';
+  img.alt = '';
+  img.decoding = 'async';
+  img.src = `${BASE}/video/hero-${formato}.webp`;
+  document.querySelector('.poster')!.append(v, img);
   addEventListener('resize', medir);
   gsap.ticker.add(atualizar);
 }
@@ -75,16 +86,26 @@ function medir() {
 
 const acelerarIntro = () => { if (video) video.playbackRate = 4; };
 
+function definirHero(o: number) {
+  if (!hero || o === opacHero) return;
+  opacHero = o;
+  hero.style.opacity = String(o);
+}
+
 function atualizar() {
   const v = video;
-  if (!v || !ativo || v.readyState < 1) return;
+  if (!v || !ativo) return;
+  const s = progressoDe(tops);
+  // a imagem Full HD entra quando a abertura termina e some no primeiro terço da rolagem até a próxima seção
+  definirHero(tocandoIntro ? 0 : Math.round(Math.max(0, 1 - s / 0.35) * 100) / 100);
+  if (v.readyState < 1) return;
   if (tocandoIntro) {
     if (v.currentTime < VIDEO_INTRO - 0.03 && !v.ended) return;
     v.pause();
     tocandoIntro = false;
     gravarSessao('am-intro', '1');
   }
-  const alvo = Math.min(VIDEO_INTRO + progressoDe(tops) * POR_SECAO, (v.duration || Infinity) - 0.01);
+  const alvo = Math.min(VIDEO_INTRO + s * POR_SECAO, (v.duration || Infinity) - 0.01);
   if (mostrado < 0) mostrado = v.currentTime;
   mostrado += (alvo - mostrado) * 0.18;
   if (!v.seeking && Math.abs(v.currentTime - mostrado) > 0.5 / FPS) v.currentTime = mostrado;

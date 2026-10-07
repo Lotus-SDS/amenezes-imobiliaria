@@ -95,7 +95,9 @@ export class Engine {
 
   redimensionar() {
     const w = this.canvas.clientWidth || innerWidth, h = this.canvas.clientHeight || innerHeight;
-    this.dprBase = Math.min(devicePixelRatio || 1, this.tier.dprMax);
+    // celular: tela de DPR 3 renderizada a 1,35 ficava borrada; pelo menos 2 (o QualityManager baixa se não aguentar)
+    const dprMax = matchMedia('(pointer: coarse)').matches ? Math.max(this.tier.dprMax, 2) : this.tier.dprMax;
+    this.dprBase = Math.min(devicePixelRatio || 1, dprMax);
     this.renderer.setPixelRatio(this.dprBase * this.qm.escala);
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;

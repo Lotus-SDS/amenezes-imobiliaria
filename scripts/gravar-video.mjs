@@ -58,5 +58,9 @@ for (const [nome, viewport] of Object.entries(FORMATOS)) {
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', join(dir, '%04d.jpg'),
     '-vf', `scale=${SAIDA[nome]}:flags=lanczos`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '33', '-g', '8', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', saida], { stdio: 'inherit' });
   console.log(`${saida}: ${total} quadros, ${(statSync(saida).size / 1e6).toFixed(1)} MB`);
+  // quadro final da abertura (o sol parado no hero) em Full HD: fica por cima do vídeo até a pessoa rolar
+  const heroImg = `public/video/hero-${nome}.webp`;
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', join(dir, `${String(INTRO).padStart(4, '0')}.jpg`), '-c:v', 'libwebp', '-quality', '88', heroImg], { stdio: 'inherit' });
+  console.log(`${heroImg}: ${(statSync(heroImg).size / 1e3).toFixed(0)} KB`);
 }
 await browser.close();
