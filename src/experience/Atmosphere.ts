@@ -15,6 +15,9 @@ export type AtmosphereOpts = { mar: number; nuvens: number; detalheMar: number }
 export class Atmosphere {
   group = new Group();
   sky: ReturnType<typeof makeSky>;
+  // céu sem ruído: a névoa do horizonte e o reflexo dentro da esfera não mostram nuvem nem estrela,
+  // e cada pixel de água calculava o céu completo 3 vezes (a água era metade do custo da cena)
+  private ceuLiso = makeSky(0, false);
 
   constructor(opts: AtmosphereOpts) {
     this.sky = makeSky(opts.nuvens);
@@ -24,7 +27,7 @@ export class Atmosphere {
   // Cor do céu exatamente no horizonte, na direção de um ponto do mundo (usada como névoa)
   horizonteNa = Fn(([p]: any[]) => {
     const dir = p.sub(cameraPosition);
-    return this.sky(vec3(dir.x, length(dir.xz).mul(0.004), dir.z));
+    return this.ceuLiso(vec3(dir.x, length(dir.xz).mul(0.004), dir.z));
   });
 
   private criarCeu() {
@@ -32,7 +35,9 @@ export class Atmosphere {
     mat.colorNode = this.sky(positionWorld.sub(cameraPosition));
     mat.fog = false;
     const m = new Mesh(new SphereGeometry(900, 48, 24), mat);
-    m.renderOrder = -10;
+    // desenhado depois dos opacos (mar, orla, símbolo): o teste de profundidade descarta os pixels
+    // cobertos e o céu procedural só roda onde aparece (antes pintava a tela toda: -32% por quadro)
+    m.renderOrder = 100;
     m.frustumCulled = false;
     return m;
   }
@@ -111,7 +116,7 @@ export class Atmosphere {
       const acerto = select(h.greaterThan(0.0).and(tHit.greaterThan(0.0)), float(1), float(0)).mul(U.materializar);
       const Ns = normalize(P.add(R.mul(tHit)).sub(U.solPos));
       const ndr = max(dot(Ns, R.negate()), 0.0);
-      const ouroRefl = vec3(1.0, 0.72, 0.18).mul(this.sky(reflect(R, Ns)).mul(0.9).add(ndr.pow(1.5).mul(U.solBrilho).mul(1.4)));
+      const ouroRefl = vec3(1.0, 0.72, 0.18).mul(this.ceuLiso(reflect(R, Ns)).mul(0.9).add(ndr.pow(1.5).mul(U.solBrilho).mul(1.4)));
       refl.assign(mix(refl, ouroRefl, acerto));
 
       // brilho do sol na água (a esfera como fonte de luz): rastro de cintilação

@@ -5,7 +5,8 @@ import {
 } from 'three/tsl';
 import { U } from '../uniforms';
 
-export const makeSky = (oitavasNuvem: number) =>
+// oitavasNuvem = 0 e estrelas = false: céu liso, sem ruído (névoa e reflexos pequenos, onde nuvem e estrela não aparecem)
+export const makeSky = (oitavasNuvem: number, estrelas = true) =>
   Fn(([dirIn]: any[]) => {
     const d = dirIn.normalize();
     const up = max(d.y, 0.0);
@@ -33,11 +34,13 @@ export const makeSky = (oitavasNuvem: number) =>
     }
 
     // estrelas: células com cintilação, só acima do horizonte
-    const cel = d.mul(260.0).floor();
-    const r = mx_cell_noise_float(cel);
-    const pisca = sin(U.tempo.mul(r.mul(3.0).add(1.0)).add(r.mul(40.0))).mul(0.35).add(0.65);
-    const estrela = smoothstep(0.9965, 1.0, r).mul(pisca).mul(smoothstep(0.02, 0.25, d.y)).mul(U.estrelas).mul(2.2);
-    base.addAssign(vec3(0.85, 0.9, 1.0).mul(estrela));
+    if (estrelas) {
+      const cel = d.mul(260.0).floor();
+      const r = mx_cell_noise_float(cel);
+      const pisca = sin(U.tempo.mul(r.mul(3.0).add(1.0)).add(r.mul(40.0))).mul(0.35).add(0.65);
+      const estrela = smoothstep(0.9965, 1.0, r).mul(pisca).mul(smoothstep(0.02, 0.25, d.y)).mul(U.estrelas).mul(2.2);
+      base.addAssign(vec3(0.85, 0.9, 1.0).mul(estrela));
+    }
 
     // abaixo do horizonte (só aparece além do mar): horizonte escurecido
     return mix(base, U.horizonte.mul(0.55), smoothstep(0.0, -0.08, d.y));
