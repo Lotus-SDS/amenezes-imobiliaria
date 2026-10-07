@@ -102,6 +102,9 @@ html.cena-pronta #cena { opacity: 1; }
     linear-gradient(180deg, #02041A 0%, #0A1240 48%, #16205E 57%, #060B26 57.3%, #030619 100%);
 }
 html.cena-pronta .poster { visibility: hidden; transition: visibility 0s 1.6s; }
+/* no celular a barra do navegador some e volta ao rolar: altura fixa na maior tela possível,
+   senão o 3D é redimensionado a cada rolagem (realoca buffers, engasga e o iOS chega a derrubar a cena) */
+@supports (height: 100lvh) { #cena, .poster { bottom: auto; height: 100lvh; } }
 /* modo estático (sem WebGL, movimento reduzido, economia de dados): a própria cena renderizada (gerada com ?poster) */
 html.sem-cena .poster { background: url(/img/og-padrao.jpg) 62% 50% / cover no-repeat, linear-gradient(180deg, #1B1F6B 0%, #E88B62 60%, #050A24 100%); }
 @media (max-aspect-ratio: 1/1) { html.sem-cena .poster { background-image: url(/img/poster-vertical.jpg), linear-gradient(180deg, #1B1F6B 0%, #E88B62 60%, #050A24 100%); background-position: 50% 0; } }
