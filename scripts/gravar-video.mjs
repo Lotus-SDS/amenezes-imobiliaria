@@ -1,8 +1,9 @@
-// Grava o vídeo da cena para aparelhos fracos (modo 'video', src/scripts/video.ts).
+// Pré-renderiza a cena para aparelhos fracos (modo 'video', player em src/scripts/video.ts).
 // Uso: com o dev server rodando (npx astro dev --port 4321): `node scripts/gravar-video.mjs [url]`.
 // Abre a home com ?poster&debug&gravar&tier=alto no Chrome com GPU, avança a cena quadro a quadro
-// (abertura + 2 s por seção) e gera em public/video/: abertura-{h,v}.mp4 (Full HD), hero-{h,v}.webp
-// (quadro final da abertura, Full HD) e cena-{h,v}.mp4 (rolagem, 720p). Player: src/scripts/video.ts.
+// (abertura + 2 s de simulação por seção, para as formas se montarem) e gera em public/cena/:
+// abertura-{h,v}.mp4 (Full HD) e tela-{h,v}-{k}.webp (Full HD, uma por seção; a 0 é o sol 1957).
+// Rode de novo sempre que a cena 3D mudar de aparência.
 import { chromium } from 'playwright';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, rmSync, statSync } from 'node:fs';
@@ -11,15 +12,13 @@ import { join } from 'node:path';
 
 const URL_BASE = process.argv[2] ?? 'http://localhost:4321/';
 // precisam bater com src/scripts/video.ts
-const FPS = 48; // 48 quadros por segundo: cada passo da rolagem mostra um movimento pequeno (24 parecia travado)
+const FPS = 48;
 const INTRO = 270; // quadros da abertura (5,6 s)
-const POR_SECAO = 96; // 2 s por seção: as silhuetas se formam devagar ao longo da rolagem
-// grava em Full HD e reduz para 720p: mais nítido que gravar direto em 720p, e o arquivo fica em ~7 MB
+const POR_SECAO = 96; // quadros de simulação entre uma seção e a seguinte (as formas terminam de se montar)
 const FORMATOS = { h: { width: 1920, height: 1080 }, v: { width: 1080, height: 1920 } };
-const SAIDA = { h: '1280:720', v: '720:1280' };
 
 const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--enable-unsafe-webgpu'] });
-mkdirSync('public/video', { recursive: true });
+mkdirSync('public/cena', { recursive: true });
 
 for (const [nome, viewport] of Object.entries(FORMATOS)) {
   const dir = join(tmpdir(), `am-quadros-${nome}`);
@@ -49,7 +48,9 @@ for (const [nome, viewport] of Object.entries(FORMATOS)) {
   for (let i = 0; i < total; i++) {
     if (i < INTRO) await passo(i / INTRO, 0);
     else await passo(1, (i - INTRO) / POR_SECAO);
-    await page.screenshot({ path: join(dir, `${String(i).padStart(4, '0')}.jpg`), type: 'jpeg', quality: 92 });
+    // só fotografa o que vira arquivo: a abertura inteira e o quadro de cada seção
+    if (i <= INTRO || (i - INTRO) % POR_SECAO === 0)
+      await page.screenshot({ path: join(dir, `${String(i).padStart(4, '0')}.jpg`), type: 'jpeg', quality: 92 });
     if (i % 50 === 0) console.log(`${nome}: ${i}/${total}`);
   }
   await page.close();
@@ -58,15 +59,14 @@ for (const [nome, viewport] of Object.entries(FORMATOS)) {
     execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...args, saida], { stdio: 'inherit' });
     console.log(`${saida}: ${(statSync(saida).size / 1e6).toFixed(1)} MB`);
   };
-  const h264 = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an'];
-  // rolagem (depois da abertura): 720p, keyframe a cada 8 quadros: cada busca decodifica no máximo 7, liso em PC fraco
-  ffmpeg(['-framerate', String(FPS), '-start_number', String(INTRO), '-i', join(dir, '%04d.jpg'),
-    '-vf', `scale=${SAIDA[nome]}:flags=lanczos`, ...h264, '-preset', 'slow', '-crf', '33', '-g', '8'], `public/video/cena-${nome}.mp4`);
   // abertura: Full HD a 30 q/s; toca uma vez (sem busca), então keyframe espaçado e compressão melhor
   ffmpeg(['-framerate', String(FPS), '-i', join(dir, '%04d.jpg'),
-    '-vf', `trim=end_frame=${INTRO + 1},fps=30`, ...h264, '-preset', 'veryslow', '-crf', '30', '-g', '60', '-bf', '3'], `public/video/abertura-${nome}.mp4`);
-  // quadro final da abertura (o sol parado no hero) em Full HD: fica por cima do vídeo até a pessoa rolar
-  const heroImg = `public/video/hero-${nome}.webp`;
-  ffmpeg(['-i', join(dir, `${String(INTRO).padStart(4, '0')}.jpg`), '-c:v', 'libwebp', '-quality', '88'], heroImg);
+    '-vf', `trim=end_frame=${INTRO + 1},fps=30`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an',
+    '-preset', 'veryslow', '-crf', '30', '-g', '60', '-bf', '3'], `public/cena/abertura-${nome}.mp4`);
+  // telas fixas: o quadro de cada seção (a 0 é o último da abertura)
+  for (let k = 0; k <= sMax; k++) {
+    const quadro = join(dir, `${String(INTRO + k * POR_SECAO).padStart(4, '0')}.jpg`);
+    ffmpeg(['-i', quadro, '-c:v', 'libwebp', '-quality', '85'], `public/cena/tela-${nome}-${k}.webp`);
+  }
 }
 await browser.close();

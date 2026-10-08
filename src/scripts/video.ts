@@ -1,96 +1,72 @@
-// Modo vídeo (aparelho fraco): no lugar do 3D ao vivo, a cena gravada por scripts/gravar-video.mjs.
-// Três camadas, de baixo para cima:
-//   cena-{h,v}.mp4     720p, 2 s por seção da home; a rolagem escolhe o quadro (as formas)
-//   hero-{h,v}.webp    Full HD, o sol parado no fim da abertura; some no começo da rolagem
-//   abertura-{h,v}.mp4 Full HD, toca uma vez por visita e termina exatamente no quadro do hero
+// Modo vídeo (aparelho fraco): no lugar do 3D ao vivo, a cena pré-renderizada por scripts/gravar-video.mjs.
+//   abertura-{h,v}.mp4  Full HD, toca uma vez por visita e termina exatamente na tela 0 (o sol 1957)
+//   tela-{h,v}-{k}.webp Full HD, uma tela fixa por seção da home; a rolagem dissolve uma na seguinte
+// Imagem parada não custa nada à máquina e fica nítida (o vídeo seguindo a rolagem era 720p e pesava).
 // Páginas internas ficam com o pôster (o sol delas depende do layout de cada tela).
 import gsap from 'gsap';
 import { progressoDe } from '../experience/progresso';
 
-// Precisam bater com scripts/gravar-video.mjs
-const FPS = 48;
-const POR_SECAO = 96 / FPS; // segundos de vídeo por seção
-
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const html = document.documentElement;
-let cena: HTMLVideoElement | null = null;
-let hero: HTMLImageElement | null = null;
+let camada: HTMLElement | null = null;
+const telas = new Map<number, HTMLImageElement>();
 let abertura: HTMLVideoElement | null = null;
 let formato: 'h' | 'v' = 'h';
 let tops: number[] = [];
 let ativo = false;
-let mostrado = -1; // tempo exibido: persegue o da rolagem passando pelos quadros do meio, sem saltos
-let opacHero = -1;
+let ultimo = '';
 
 export function montarVideo() {
   if (!document.querySelector('[data-cena="hero"]')) return pararVideo();
-  if (!cena) criar();
+  if (!camada) criar();
   ativo = true;
+  camada!.hidden = false;
   medir();
   document.fonts?.ready.then(medir);
   setTimeout(medir, 1200);
-  if (cena!.readyState >= 2) html.classList.add('video-pronto');
   if (!abertura && !lerSessao('am-intro') && scrollY < 10) tocarAbertura();
 }
 
 function pararVideo() {
   ativo = false;
-  cena?.pause();
   encerrarAbertura();
-  html.classList.remove('video-pronto');
-  definirHero(0);
-}
-
-function novoVideo(classe: string, src: string) {
-  const v = document.createElement('video');
-  v.className = classe;
-  v.muted = true;
-  v.playsInline = true;
-  v.setAttribute('aria-hidden', 'true');
-  v.src = src;
-  return v;
+  if (camada) camada.hidden = true;
+  ultimo = '';
 }
 
 function criar() {
   formato = innerWidth >= innerHeight ? 'h' : 'v';
-  const v = (cena = novoVideo('cena-video', `${BASE}/video/cena-${formato}.mp4`));
-  // só baixa depois da abertura (ou na primeira rolagem): não disputa banda com ela
-  v.preload = 'none';
-  // o pôster fica por baixo até o primeiro quadro; se o vídeo falhar, ele simplesmente fica
-  const mostrar = () => ativo && html.classList.add('video-pronto');
-  v.addEventListener('loadeddata', mostrar);
-  v.addEventListener('seeked', mostrar);
-  // iOS (e modo de pouca energia): sem um play() o vídeo não carrega nem desenha quadros ao buscar.
-  // Destrava no primeiro toque ou rolagem: toca e pausa na hora.
-  const destravar = () => {
-    removeEventListener('touchstart', destravar);
-    removeEventListener('scroll', destravar);
-    carregarCena();
-    v.play().then(() => v.pause()).catch(() => {});
-  };
-  addEventListener('touchstart', destravar, { passive: true });
-  addEventListener('scroll', destravar, { passive: true });
-
-  const img = (hero = new Image());
-  img.className = 'cena-hero';
-  img.alt = '';
-  img.decoding = 'async';
-  img.src = `${BASE}/video/hero-${formato}.webp`;
-
-  document.querySelector('.poster')!.append(v, img);
+  camada = document.createElement('div');
+  camada.className = 'cena-telas';
+  document.querySelector('.poster')!.append(camada);
   addEventListener('resize', medir);
   gsap.ticker.add(atualizar);
 }
 
-function carregarCena() {
-  if (!cena || cena.preload !== 'none') return;
-  cena.preload = 'auto';
-  cena.load(); // o iOS ignora preload: pede o arquivo explicitamente
+// Só existem no DOM a tela atual, a seguinte e as vizinhas (memória baixa em PC fraco e celular)
+function tela(k: number) {
+  let img = telas.get(k);
+  if (!img) {
+    img = new Image();
+    img.className = 'cena-tela';
+    img.alt = '';
+    img.decoding = 'async';
+    img.style.zIndex = String(k);
+    img.src = `${BASE}/cena/tela-${formato}-${k}.webp`;
+    telas.set(k, img);
+    camada!.append(img);
+  }
+  return img;
 }
 
 function tocarAbertura() {
-  const a = (abertura = novoVideo('cena-abertura', `${BASE}/video/abertura-${formato}.mp4`));
+  const a = (abertura = document.createElement('video'));
+  a.className = 'cena-abertura';
+  a.muted = true;
+  a.playsInline = true;
   a.preload = 'auto';
+  a.setAttribute('aria-hidden', 'true');
+  a.src = `${BASE}/cena/abertura-${formato}.mp4`;
   a.addEventListener('playing', () => a.classList.add('tocando'));
   a.addEventListener('ended', encerrarAbertura);
   // internet lenta: se não começar em 2,5 s, pula direto para o sol parado
@@ -108,8 +84,7 @@ function encerrarAbertura() {
   removeEventListener('scroll', acelerarAbertura);
   a.classList.add('fim');
   a.pause();
-  carregarCena();
-  // o quadro final é o mesmo do hero: a abertura some por cima da imagem, sem salto
+  // o quadro final é a tela 0: a abertura some por cima dela, sem salto
   setTimeout(() => a.remove(), 900);
 }
 
@@ -119,24 +94,24 @@ function medir() {
   tops = [...document.querySelectorAll<HTMLElement>('[data-cena]')].map((el) => el.getBoundingClientRect().top + scrollY);
 }
 
-function definirHero(o: number) {
-  if (!hero || o === opacHero) return;
-  opacHero = o;
-  hero.style.opacity = String(o);
-}
-
 function atualizar() {
-  const v = cena;
-  if (!v || !ativo) return;
-  const s = progressoDe(tops);
-  // o sol Full HD espera a abertura acabar (não revela o final) e fica até o primeiro terço da rolagem
-  const naAbertura = abertura && !abertura.classList.contains('fim');
-  definirHero(naAbertura ? 0 : Math.round(Math.max(0, 1 - s / 0.35) * 100) / 100);
-  if (v.readyState < 1) return;
-  const alvo = Math.min(s * POR_SECAO, (v.duration || Infinity) - 0.01);
-  if (mostrado < 0) mostrado = v.currentTime;
-  mostrado += (alvo - mostrado) * 0.18;
-  if (!v.seeking && Math.abs(v.currentTime - mostrado) > 0.5 / FPS) v.currentTime = mostrado;
+  if (!ativo || !tops.length) return;
+  // as telas esperam a abertura acabar (não revelam o final antes da hora)
+  if (abertura && !abertura.classList.contains('fim')) return;
+  const s = Math.min(progressoDe(tops), tops.length - 1);
+  const i = Math.floor(s);
+  const f = s - i;
+  const mistura = Math.round(f * f * (3 - 2 * f) * 100) / 100;
+  const estado = `${i}:${mistura}`;
+  if (estado === ultimo) return;
+  ultimo = estado;
+
+  // carrega uma à frente e uma atrás; descarta as distantes
+  for (const k of [i - 1, i, i + 1, i + 2]) if (k >= 0 && k < tops.length) tela(k);
+  for (const [k, img] of telas) {
+    if (k < i - 1 || k > i + 2) { img.remove(); telas.delete(k); continue; }
+    img.style.opacity = k === i ? '1' : k === i + 1 ? String(mistura) : '0';
+  }
 }
 
 // sessionStorage pode lançar exceção (modo privado, iframe)
