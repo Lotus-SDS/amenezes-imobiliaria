@@ -26,7 +26,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      DEPLOY_DIR: ${{ vars.DEPLOY_DIR || '/root/amenezes-imobiliaria' }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/root/amenezes-imobiliaria' }}
       URL: https://lotusdev.com.br/amenezes-imobiliaria/
     steps:
       - name: Chave SSH
@@ -43,7 +43,7 @@ jobs:
         env:
           TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
         run: |
-          ssh -o BatchMode=yes "$TARGET" bash -s -- "$DEPLOY_DIR" <<'SH'
+          ssh -o BatchMode=yes "$TARGET" bash -s -- "$DEPLOY_PATH" <<'SH'
           set -euo pipefail
           cd "$1"
           git pull --ff-only

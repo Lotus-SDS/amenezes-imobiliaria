@@ -84,7 +84,7 @@ Cada push na `main` dispara `.github/workflows/deploy.yml`: confere o build, ent
 mv /root/amenezes-imobiliaria /opt/amenezes
 chown -R deploy:deploy /opt/amenezes
 ```
-Então ponha a chave pública em `/home/deploy/.ssh/authorized_keys`, use `DEPLOY_USER=deploy` e crie a **variável** (aba Variables, não Secrets) `DEPLOY_DIR=/opt/amenezes`. Sem ela, o workflow usa `/root/amenezes-imobiliaria`.
+Então ponha a chave pública em `/home/deploy/.ssh/authorized_keys`, use `DEPLOY_USER=deploy` e crie a **variável** (aba Variables, não Secrets) `DEPLOY_PATH=/opt/amenezes`. Sem ela, o workflow usa `/root/amenezes-imobiliaria`.
 
 ---
 
