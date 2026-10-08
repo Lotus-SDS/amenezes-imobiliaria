@@ -37,7 +37,9 @@ export function detectarModo(): Modo {
   // ou GPU bloqueada): não adianta ter navigator.gpu, a cena rodaria na CPU
   const { webgl2, renderer } = lerGPU();
   const r = renderer.toLowerCase();
-  if (!webgl2 || !r || /swiftshader|llvmpipe|software|basic render/.test(r)) return 'video';
+  if (!webgl2 || /swiftshader|llvmpipe|software|basic render/.test(r)) return 'video';
+  // Nome da GPU escondido (o Brave responde "Brave", Firefox com resistFingerprinting etc.): não dá para
+  // julgar pelo aparelho, então abre o 3D e o QualityManager decide pelo tempo de quadro real.
 
   const toque = matchMedia('(pointer: coarse)').matches;
   const memoria = (navigator as any).deviceMemory ?? 8;
@@ -51,8 +53,9 @@ export function detectarModo(): Modo {
     return memoria >= 6 && nucleos >= 8 ? 'medio' : 'video';
   }
   if (/rtx|radeon rx|geforce gtx (10[6-8]|16)|apple m\d|arc a/.test(r)) return 'alto';
-  // vídeo integrado no PC (Intel UHD/Iris, Radeon Graphics/Vega do processador) ou pouca memória
-  if ((/intel/.test(r) && !/\barc\b/.test(r)) || /radeon(\(tm\))? (graphics|vega)|\bvega\b/.test(r) || memoria <= 4) return 'video';
+  // vídeo integrado no PC (Intel UHD/Iris, Radeon Graphics/Vega do processador). Memória não entra aqui:
+  // navegadores com proteção contra rastreamento informam um valor genérico (o Brave dá 4 numa máquina com RTX)
+  if ((/intel/.test(r) && !/\barc\b/.test(r)) || /radeon(\(tm\))? (graphics|vega)|\bvega\b/.test(r)) return 'video';
   return 'medio';
 }
 
