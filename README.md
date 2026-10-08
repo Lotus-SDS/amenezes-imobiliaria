@@ -42,16 +42,49 @@ O app roda no mesmo servidor e no mesmo Traefik da Lotus, mas numa **stack próp
 
 ```bash
 # primeira vez
-git clone https://github.com/Lotus-SDS/amenezes-imobiliaria.git /opt/amenezes
-cd /opt/amenezes && git switch main
+git clone https://github.com/Lotus-SDS/amenezes-imobiliaria.git /root/amenezes-imobiliaria
+cd /root/amenezes-imobiliaria && git switch main
 docker compose -f deploy/compose.yml up -d --build
 docker compose -f deploy/compose.yml exec app node scripts/criar-admin.mjs
 
-# atualizar
-cd /opt/amenezes && git pull && docker compose -f deploy/compose.yml up -d --build
+# atualizar à mão (normalmente a publicação automática faz isso)
+cd /root/amenezes-imobiliaria && git pull && docker compose -f deploy/compose.yml up -d --build
 ```
 
 O `deploy/compose.yml` entra na rede `web_network` e responde em `lotusdev.com.br/amenezes-imobiliaria/` com certificado `myresolver`. A prioridade alta faz essa rota vencer a do site estático antigo enquanto ela existir.
+
+### Publicação automática
+
+Cada push na `main` dispara `.github/workflows/deploy.yml`: confere o build, entra por SSH no servidor, roda o comando de atualização acima, espera o container `amenezes-app-1` ficar `healthy` e confere que o site responde 200. Se algo falhar, o job fica vermelho e mostra os últimos logs do app. Só um deploy roda por vez; também dá para disparar à mão em **Actions → deploy → Run workflow**.
+
+**Configuração única** (uma vez só):
+
+1. **Chave dedicada** (no seu computador, sem senha, só para o deploy):
+   ```bash
+   ssh-keygen -t ed25519 -N "" -C "github-deploy-amenezes" -f amenezes_deploy
+   ```
+2. **Autorizar a chave no servidor:** acrescente o conteúdo de `amenezes_deploy.pub` em `~/.ssh/authorized_keys` do usuário que vai publicar (`root` hoje, ou `deploy`, ver abaixo).
+3. **Impressão digital do servidor:**
+   ```bash
+   ssh-keyscan -t ed25519 2.25.255.170
+   ```
+   Confira que bate com a do seu `~/.ssh/known_hosts` antes de usar.
+4. **Secrets** em GitHub → repositório → Settings → Secrets and variables → Actions:
+   | Secret | Valor |
+   |---|---|
+   | `DEPLOY_HOST` | `2.25.255.170` |
+   | `DEPLOY_USER` | `root` (ou `deploy`) |
+   | `DEPLOY_SSH_KEY` | conteúdo inteiro de `amenezes_deploy` (a privada) |
+   | `DEPLOY_KNOWN_HOSTS` | a linha do passo 3 |
+
+   Depois apague `amenezes_deploy` do computador.
+
+**Usuário `deploy` em vez de `root` (opcional, recomendado):** como nos outros sites da Lotus, o deploy pode usar o usuário `deploy`, que já está no grupo `docker`. O banco não corre risco ao mudar a pasta: o volume se chama `amenezes_dados` pelo `name: amenezes` do compose, não pela pasta.
+```bash
+mv /root/amenezes-imobiliaria /opt/amenezes
+chown -R deploy:deploy /opt/amenezes
+```
+Então ponha a chave pública em `/home/deploy/.ssh/authorized_keys`, use `DEPLOY_USER=deploy` e crie a **variável** (aba Variables, não Secrets) `DEPLOY_DIR=/opt/amenezes`. Sem ela, o workflow usa `/root/amenezes-imobiliaria`.
 
 ---
 

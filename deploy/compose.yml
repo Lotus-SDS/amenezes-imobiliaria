@@ -1,5 +1,6 @@
 # Stack própria da A. Menezes no servidor da Lotus (mesmo Traefik, rede web_network e certificado).
-# No servidor:  cd /root/amenezes-imobiliaria && git pull && docker compose -f deploy/compose.yml up -d --build
+# Publicado sozinho a cada push na main por .github/workflows/deploy.yml, que roda no servidor:
+#   cd /root/amenezes-imobiliaria && git pull && docker compose -f deploy/compose.yml up -d --build
 # Banco e fotos ficam no volume "dados": sobrevivem a cada atualização.
 name: amenezes
 
